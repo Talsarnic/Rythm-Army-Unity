@@ -88,6 +88,20 @@ Every level is authored from reusable gameplay markers:
 Art attaches to these markers later. The result should feel like a continuous authored adventure rather than disconnected combat arenas.
 
 
+## Runtime Terrain Rules
+
+The combat prototype now gives the route physical gameplay meaning through terrain bands:
+
+- **Deep water:** slows movement, with a stronger penalty for heavy frontline classes.
+- **Mud:** slows the army and makes charges less effective.
+- **Ice:** preserves forward momentum, making Charge stronger but less controlled.
+- **Heat / lava shelves:** slow heavy units and inflict a small rhythm-command heat tick while the army remains in the zone.
+- **Sand:** reduces ranged damage, with deeper sand applying the strongest penalty.
+- **Elevated terrain:** improves ranged damage and slightly improves charge momentum.
+- **Sacred stone:** provides a mild ranged advantage around the final ruin altar.
+- Terrain is resolved from biome and world progress through TerrainRules, so the greybox route can later be replaced by authored terrain segments without rewriting combat logic.
+- Terrain transitions emit presentation feedback so the final art/UI layer can display readable environmental state changes.
+
 ## Greybox Route Coverage
 
 The greybox implementation now gives every campaign stage a distinct spatial route. The stages intentionally vary elevation, chokepoints, hazards, optional discoveries, reinforcement timing, and finale placement while preserving the continuous left-to-right rhythm journey.

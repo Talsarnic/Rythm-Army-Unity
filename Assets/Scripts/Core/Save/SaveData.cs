@@ -57,7 +57,7 @@ namespace RhythmArmy.Core.Save
                 Roster = new List<UnitMember>
                 {
                     new UnitMember(Guid.NewGuid().ToString(), UnitClass.Banner, 1),
-                    new UnitMember(Guid.NewGuid().ToString(), UnitClass.Spearman, 1, "spear-wood", null, "helm-leather"),
+                    new UnitMember(Guid.NewGuid().ToString(), UnitClass.Spearman, 1, "spear-wood", null, "helm-leather", Subspecies.Normal, true),
                     new UnitMember(Guid.NewGuid().ToString(), UnitClass.Spearman, 1, "spear-wood", null, null),
                     new UnitMember(Guid.NewGuid().ToString(), UnitClass.Spearman, 1, "spear-wood", null, null),
                     new UnitMember(Guid.NewGuid().ToString(), UnitClass.Swordsman, 1, "sword-wood", "shield-buckler", "helm-leather"),

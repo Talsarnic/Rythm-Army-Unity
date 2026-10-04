@@ -40,6 +40,7 @@ namespace RhythmArmy.Gameplay.Battle
 
         public event Action<DamageNumberEvent> OnDamageNumberSpawned;
         public event Action<BattleResult> OnBattleEnded;
+        public event Action<TerrainProfile> OnTerrainChanged;
 
         public bool IsActive
         {
@@ -234,6 +235,33 @@ namespace RhythmArmy.Gameplay.Battle
                     {
                         Camera.AddTrauma(feedback.IsCritical ? 0.10f : 0.04f);
                     }
+                }
+                return;
+            }
+
+            if (feedback.Type == CombatFeedbackType.UnitHurt)
+            {
+                var unitView = feedback.Unit != null
+                    ? UnitViews.FirstOrDefault(v => v.LiveData.Member.Id == feedback.Unit.Member.Id)
+                    : null;
+                if (unitView != null)
+                {
+                    unitView.TakeDamage(feedback.Damage);
+                    SpawnDamageNumber(
+                        feedback.WorldX,
+                        feedback.WorldY - 16f,
+                        feedback.Damage,
+                        false);
+                }
+                return;
+            }
+
+            if (feedback.Type == CombatFeedbackType.TerrainChanged)
+            {
+                TerrainProfile profile = BattleManager.State.CurrentTerrain;
+                if (OnTerrainChanged != null)
+                {
+                    OnTerrainChanged.Invoke(profile);
                 }
                 return;
             }

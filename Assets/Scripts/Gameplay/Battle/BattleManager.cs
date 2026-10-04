@@ -73,7 +73,8 @@ namespace RhythmArmy.Gameplay.Battle
             var mealBuff = !string.IsNullOrEmpty(activeMealBuffId) ? ItemDef.Get(activeMealBuffId) : null;
             CombatRules.InitializeBattle(State, mission, roster, mealBuff);
 
-            Rhythm = new RhythmEngine(bpm, 0f);
+            Rhythm = new RhythmEngine(bpm, null);
+            Rhythm.Start(0f);
             AudioSequencer.SetBPM(bpm);
             AudioSequencer.SetFeverActive(false);
 

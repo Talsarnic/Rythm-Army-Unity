@@ -146,111 +146,157 @@ namespace RhythmArmy.Visuals
                 return;
             }
 
-            // --- 32x32 Chibi Heroic Unit Rendering ---
+            // --- 32x32 painterly fantasy infantry rendering ---
+            DrawPainterlyInfantryFrame(buffer, ox, oy, size, skin, accent, unitClass, species, row, frame, stride);
+        }
+
+        private static void DrawPainterlyInfantryFrame(
+            PixelBitmapBuffer buffer, int ox, int oy, int size,
+            PixelColor32 skin, PixelColor32 accent, UnitClass unitClass,
+            Subspecies species, int row, int frame, int stride)
+        {
+            int cx = ox + size / 2;
             int groundY = oy + size - 3;
 
-            // 1. Drop Shadow
-            buffer.FillRect(cx - 6, groundY - 1, 12, 3, new PixelColor32(15, 15, 20, 100));
+            // Compact grounding shadow; the silhouette is intentionally chunky and asymmetric.
+            buffer.FillRect(cx - 6, groundY - 1, 12, 2, new PixelColor32(15, 15, 20, 115));
 
-            // 2. Armored / Leather Boots & Legs
-            int bootY = groundY - 5;
-            PixelColor32 bootDark = PixelColor32.LeatherDark;
-            PixelColor32 bootLight = PixelColor32.LeatherLight;
-            // Left Boot
-            int lbX = cx - 4 + stride;
-            buffer.FillRect(lbX, bootY, 3, 4, bootDark);
-            buffer.SetPixel(lbX + 2, bootY + 2, bootLight);
-            // Right Boot
-            int rbX = cx + 1 - stride;
-            buffer.FillRect(rbX, bootY, 3, 4, bootDark);
-            buffer.SetPixel(rbX + 2, bootY + 2, bootLight);
+            PixelColor32 tunicDark = accent.Darken(0.38f);
+            PixelColor32 tunicLight = accent.Lighten(0.28f);
+            PixelColor32 skinDark = skin.Darken(0.24f);
+            PixelColor32 skinLight = skin.Lighten(0.22f);
 
-            // 3. Torso, Tunic & Armor Layer
-            int torsoY = cy + 1;
-            int torsoW = 8;
-            int torsoH = 7;
-            // Tunic base (Class accent color with shading ramp)
-            PixelColor32 tunicDark = accent.Darken(0.35f);
-            PixelColor32 tunicMid = accent;
-            PixelColor32 tunicLight = accent.Lighten(0.35f);
+            // Legs are separated into readable pixel clusters instead of uniform rectangles.
+            int legY = groundY - 6;
+            int leftLeg = cx - 4 + stride;
+            int rightLeg = cx + 1 - stride;
+            buffer.FillRect(leftLeg, legY, 3, 5, PixelColor32.LeatherDark);
+            buffer.FillRect(leftLeg + 1, legY, 2, 2, PixelColor32.LeatherMid);
+            buffer.FillRect(rightLeg, legY, 3, 5, PixelColor32.LeatherDark);
+            buffer.FillRect(rightLeg + 1, legY + 1, 2, 2, PixelColor32.LeatherMid);
+            buffer.SetPixel(leftLeg, groundY - 1, PixelColor32.Black);
+            buffer.SetPixel(rightLeg + 2, groundY - 1, PixelColor32.Black);
 
-            buffer.FillRect(cx - 4, torsoY, torsoW, torsoH, tunicMid);
-            buffer.FillRect(cx - 4, torsoY + torsoH - 2, torsoW, 2, tunicDark); // Tunic hem shadow
-            buffer.DrawLine(cx - 4, torsoY, cx + 3, torsoY, tunicLight); // Shoulder highlight
+            int bodyY = oy + 15;
+            int bodyLeft = cx - 5;
+            int bodyRight = cx + 4;
 
-            // Belt & Buckle
-            buffer.DrawLine(cx - 4, torsoY + 4, cx + 3, torsoY + 4, PixelColor32.LeatherDark);
-            buffer.FillRect(cx - 1, torsoY + 3, 2, 2, PixelColor32.GoldMid); // Brass buckle
-
-            // Chestplate / Spaulders for melee & heavy units
-            if (unitClass == UnitClass.Swordsman || unitClass == UnitClass.Banner || unitClass == UnitClass.Brawler)
+            // Class silhouettes. Each has a different shoulder/waist rhythm so the roster
+            // reads correctly even before weapons and helmets are layered on.
+            switch (unitClass)
             {
-                buffer.FillRect(cx - 3, torsoY + 1, 6, 3, PixelColor32.SteelMid);
-                buffer.SetPixel(cx - 2, torsoY + 1, PixelColor32.SteelGlint);
-                buffer.DrawLine(cx - 3, torsoY + 3, cx + 2, torsoY + 3, PixelColor32.SteelDark);
+                case UnitClass.Banner:
+                    buffer.FillRect(bodyLeft - 1, bodyY, 11, 9, tunicDark);
+                    buffer.FillRect(bodyLeft, bodyY + 1, 9, 6, accent);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, tunicLight);
+                    buffer.FillRect(bodyLeft - 2, bodyY + 1, 2, 5, PixelColor32.GoldDark);
+                    buffer.FillRect(bodyRight, bodyY + 2, 2, 5, PixelColor32.GoldMid);
+                    break;
+
+                case UnitClass.Spearman:
+                    buffer.FillRect(bodyLeft, bodyY, 9, 9, tunicDark);
+                    buffer.FillRect(bodyLeft + 1, bodyY, 7, 7, accent);
+                    buffer.FillRect(bodyLeft + 2, bodyY + 1, 4, 2, tunicLight);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 7, 7, 2, PixelColor32.LeatherDark);
+                    buffer.SetPixel(bodyLeft + 7, bodyY + 3, PixelColor32.SteelLight);
+                    break;
+
+                case UnitClass.Swordsman:
+                    buffer.FillRect(bodyLeft - 1, bodyY, 11, 9, PixelColor32.SteelDark);
+                    buffer.FillRect(bodyLeft, bodyY + 1, 9, 6, PixelColor32.SteelMid);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, PixelColor32.SteelLight);
+                    buffer.FillRect(bodyLeft + 2, bodyY + 6, 5, 2, tunicDark);
+                    buffer.SetPixel(bodyLeft + 7, bodyY + 4, PixelColor32.SteelGlint);
+                    break;
+
+                case UnitClass.Archer:
+                    buffer.FillRect(bodyLeft, bodyY, 9, 9, tunicDark);
+                    buffer.FillRect(bodyLeft - 1, bodyY + 1, 11, 6, accent);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, tunicLight);
+                    buffer.FillRect(bodyLeft + 2, bodyY + 6, 5, 3, PixelColor32.LeatherDark);
+                    buffer.SetPixel(bodyLeft - 2, bodyY + 3, PixelColor32.VerdantMoss);
+                    break;
+
+                case UnitClass.Hornist:
+                    buffer.FillRect(bodyLeft, bodyY + 1, 9, 8, tunicDark);
+                    buffer.FillRect(bodyLeft + 1, bodyY, 7, 7, accent);
+                    buffer.FillRect(bodyLeft + 2, bodyY + 1, 4, 2, tunicLight);
+                    buffer.FillRect(bodyLeft + 6, bodyY + 6, 3, 2, PixelColor32.GoldDark);
+                    break;
+
+                case UnitClass.Mage:
+                    buffer.FillRect(bodyLeft - 1, bodyY + 1, 11, 8, tunicDark);
+                    buffer.FillRect(bodyLeft, bodyY, 9, 7, accent);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, tunicLight);
+                    buffer.FillRect(bodyLeft - 2, bodyY + 7, 13, 3, PixelColor32.FromHex("#35134D"));
+                    buffer.SetPixel(bodyLeft + 7, bodyY + 3, PixelColor32.SpiritCyan);
+                    break;
+
+                case UnitClass.Brawler:
+                    buffer.FillRect(bodyLeft - 2, bodyY, 12, 9, tunicDark);
+                    buffer.FillRect(bodyLeft - 1, bodyY + 1, 10, 6, accent);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, tunicLight);
+                    buffer.FillRect(bodyLeft, bodyY + 6, 8, 3, PixelColor32.LeatherDark);
+                    break;
+
+                default:
+                    buffer.FillRect(bodyLeft, bodyY, 9, 9, accent);
+                    buffer.FillRect(bodyLeft + 1, bodyY + 1, 5, 2, tunicLight);
+                    break;
             }
 
-            // 4. Head, Face & Subspecies Features
-            int headY = cy - 8;
-            int headRadius = 4;
-            PixelColor32 skinDark = skin.Darken(0.25f);
-            PixelColor32 skinLight = skin.Lighten(0.25f);
+            // Neck and head use layered light/shadow clusters rather than a flat circle.
+            int headY = oy + 9;
+            buffer.FillRect(cx - 2, bodyY - 1, 4, 3, skinDark);
+            buffer.FillCircle(cx, headY, 5, skin);
+            buffer.FillRect(cx - 4, headY + 1, 2, 3, skinDark);
+            buffer.FillRect(cx + 2, headY + 2, 2, 2, skinDark);
+            buffer.FillRect(cx - 2, headY - 3, 4, 2, skinLight);
+            buffer.SetPixel(cx + 2, headY - 1, PixelColor32.Black);
+            buffer.SetPixel(cx + 3, headY - 1, PixelColor32.White);
 
-            // Head sphere
-            buffer.FillCircle(cx, headY, headRadius, skin);
-            buffer.DrawLine(cx - 3, headY + 3, cx + 3, headY + 3, skinDark); // Jaw shadow
-
-            // Subspecies Anatomy Overlays
+            // Species change the silhouette, not merely the color.
             if (species == Subspecies.Swiftpaw)
             {
-                // Long rabbit/hare ears
-                buffer.FillRect(cx - 3, headY - 8, 2, 6, skin);
-                buffer.SetPixel(cx - 2, headY - 6, PixelColor32.Crimson.Lighten(0.5f));
-                buffer.FillRect(cx + 2, headY - 8, 2, 6, skin);
-                buffer.SetPixel(cx + 3, headY - 6, PixelColor32.Crimson.Lighten(0.5f));
+                buffer.FillRect(cx - 4, headY - 9, 3, 7, skin);
+                buffer.FillRect(cx + 2, headY - 9, 3, 7, skinDark);
+                buffer.SetPixel(cx - 3, headY - 7, PixelColor32.Crimson);
+                buffer.SetPixel(cx + 3, headY - 7, PixelColor32.Crimson);
             }
             else if (species == Subspecies.Frogtide)
             {
-                // Coral/Fin aquatic horns
-                buffer.DrawLine(cx - 4, headY - 2, cx - 7, headY - 6, PixelColor32.SpiritCyan);
-                buffer.DrawLine(cx + 4, headY - 2, cx + 7, headY - 6, PixelColor32.SpiritCyan);
+                buffer.FillRect(cx - 5, headY - 2, 2, 4, PixelColor32.SpiritCyan);
+                buffer.FillRect(cx + 4, headY - 2, 2, 4, PixelColor32.SpiritCyan);
+                buffer.SetPixel(cx - 5, headY - 3, PixelColor32.MithrilBlue);
+                buffer.SetPixel(cx + 5, headY - 3, PixelColor32.MithrilBlue);
             }
             else if (species == Subspecies.Ironwool)
             {
-                // Fluffy wool collar & curly ram horns
-                buffer.FillRect(cx - 5, torsoY - 2, 10, 3, PixelColor32.White);
-                buffer.SetPixel(cx - 5, headY - 2, PixelColor32.WoodBrown);
-                buffer.SetPixel(cx + 4, headY - 2, PixelColor32.WoodBrown);
+                buffer.FillRect(cx - 5, bodyY - 2, 11, 3, PixelColor32.White);
+                buffer.SetPixel(cx - 5, headY - 1, PixelColor32.WoodBrown);
+                buffer.SetPixel(cx + 5, headY - 1, PixelColor32.WoodBrown);
             }
             else if (species == Subspecies.Colossus)
             {
-                // Heavy obsidian brow and stone horns
-                buffer.FillRect(cx - 4, headY - 3, 8, 2, PixelColor32.ObsidianSlate);
-                buffer.DrawLine(cx - 4, headY - 4, cx - 6, headY - 7, PixelColor32.IronGrey);
-                buffer.DrawLine(cx + 3, headY - 4, cx + 5, headY - 7, PixelColor32.IronGrey);
+                buffer.FillRect(cx - 5, headY - 4, 10, 3, PixelColor32.ObsidianSlate);
+                buffer.FillRect(cx - 4, headY - 6, 2, 3, PixelColor32.IronGrey);
+                buffer.FillRect(cx + 3, headY - 6, 2, 3, PixelColor32.IronGrey);
             }
             else if (species == Subspecies.Apex)
             {
-                // Glowing celestial starlight halo
                 buffer.DrawCircle(cx, headY - 6, 4, PixelColor32.StarGold, false);
                 buffer.SetPixel(cx, headY - 7, PixelColor32.White);
             }
 
-            // Moonlighter Iconic Eyes
-            int eyeX = cx + 1;
-            int eyeY = headY - 1;
-            // Eye sclera
-            buffer.FillRect(eyeX, eyeY, 3, 4, PixelColor32.White);
-            // Pupil & Iris
-            buffer.FillRect(eyeX + 1, eyeY + 1, 2, 3, PixelColor32.Black);
-            // Catchlight glint
-            buffer.SetPixel(eyeX + 1, eyeY + 1, PixelColor32.White);
+            // Cloth folds / armor planes are small clusters, not full-width gradients.
+            if (unitClass != UnitClass.Swordsman)
+            {
+                buffer.SetPixel(bodyLeft + 2, bodyY + 4, tunicLight);
+                buffer.SetPixel(bodyLeft + 3, bodyY + 5, tunicDark);
+            }
 
-            // 5. Class Headwear & Helmets
             DrawClassHeadwear(buffer, cx, headY, unitClass, accent);
-
-            // 6. Class Weapons & Equipment Overlays
-            DrawClassWeapons(buffer, cx, cy, unitClass, accent, row, frame);
+            DrawClassWeapons(buffer, cx, bodyY, unitClass, accent, row, frame);
         }
 
         private static void DrawLargeUnitFrame(PixelBitmapBuffer buffer, int ox, int oy, int size, PixelColor32 skin, PixelColor32 accent, UnitClass unitClass, Subspecies species, int row, int frame, int stride)

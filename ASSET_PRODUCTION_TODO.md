@@ -94,7 +94,7 @@ These are required to make the recent rhythm-combat movement feel deliberate rat
 - [ ] **Jump airborne** — readable airborne silhouette.
 - [ ] **Jump landing** — impact pose and brief recovery.
 - [ ] **Hurt reaction** — directional hit recoil.
-- [ ] **Enemy hit reaction** — recoil/flinch synchronized to player attack impact.
+- [~] **Enemy hit reaction** — runtime recoil/flinch + hit flash is synchronized to player attack impact; final enemy sprites still need authored recoil frames.
 - [ ] **Death start / collapse** — readable defeat transition.
 - [ ] **Victory march** — post-objective celebratory movement.
 - [ ] **Hero ability anticipation**
@@ -108,11 +108,11 @@ These are code/data tasks rather than sprite assets, but they are required to ma
 - [~] Beat-number animation cue windows for each command (runtime director integrated; final art timing still needs validation).
 - [~] Individual unit attack stagger based on formation index / stable unit identity (runtime cue stagger integrated).
 - [~] Separate anticipation, active, and recovery timing at runtime (cue director integrated; dedicated sprite-frame authoring still needed).
-- [ ] Frontline collision pressure / crowd separation.
-- [ ] Enemy impact reaction timing.
-- [ ] Formation morale / pressure feedback when surrounded.
+- [~] Frontline collision pressure / crowd separation — runtime separation and frontline pushback integrated.
+- [~] Enemy impact reaction timing — runtime combat feedback events drive hit reactions at damage resolution.
+- [~] Formation morale / pressure feedback when surrounded — persistent 0–100 formation pressure/integrity model integrated.
 - [ ] Terrain movement modifiers.
-- [ ] Camera framing around army/enemy engagement.
+- [~] Camera framing around army/enemy engagement — engagement impacts now add responsive camera trauma; full framing pass remains.
 - [ ] Beat 1 and command-resolution audio accents.
 
 ---
@@ -236,6 +236,7 @@ Every applicable combatant needs:
 - [ ] Charge / special movement where applicable
 - [ ] Jump / airborne response where applicable
 - [ ] Boss telegraph poses
+- [~] Normal enemy attack telegraphs — one command response window is now exposed through the runtime feedback/telegraph system.
 - [ ] Boss attack wind-ups
 - [ ] Boss attack releases
 - [ ] Boss recovery windows
@@ -606,6 +607,7 @@ An asset is not **Done** until all applicable checks pass.
 - [~] Rhythm command timing system
 - [~] Dynamic attack lunge / charge / jump simulation
 - [~] Rhythm combat design specification
+- [~] Enemy combat feedback / formation pressure runtime slice
 
 ## Final production art still needed
 

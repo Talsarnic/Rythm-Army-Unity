@@ -7,6 +7,10 @@ OcclusionCullingSettings:
 --- !u!1 &100
 GameObject:
   m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
   m_Name: PixelCamera
   m_Component:
   - component: {fileID: 101}
@@ -34,6 +38,10 @@ Camera:
 --- !u!1 &200
 GameObject:
   m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
   m_Name: JourneyGreyboxLayout
   m_Component:
   - component: {fileID: 201}

@@ -9,7 +9,8 @@ namespace RhythmArmy.Gameplay.Battle
         UnitHurt,
         EnemyAttackTelegraph,
         EnemyAttackImpact,
-        FormationPressure
+        FormationPressure,
+        TerrainChanged
     }
 
     /// <summary>
@@ -87,6 +88,17 @@ namespace RhythmArmy.Gameplay.Battle
                 Type = CombatFeedbackType.FormationPressure,
                 Damage = pressure,
                 Knockback = integrity
+            };
+        }
+
+        public static CombatFeedbackEvent TerrainChanged(TerrainProfile profile)
+        {
+            return new CombatFeedbackEvent
+            {
+                Type = CombatFeedbackType.TerrainChanged,
+                AttackName = profile.DisplayName,
+                WorldX = 0f,
+                WorldY = 0f
             };
         }
     }

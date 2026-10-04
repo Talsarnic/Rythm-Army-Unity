@@ -124,9 +124,49 @@ namespace RhythmArmy.Visuals
 
         private static void DrawFarScenery(PixelBitmapBuffer buffer, BiomeType biome)
         {
-            PixelColor32 mountainCol = GetBiomeFarColor(biome);
+            PixelColor32 farCol = GetBiomeFarColor(biome);
 
-            // Distant mountain ridgeline
+            if (biome == BiomeType.CoralCoast)
+            {
+                var oceanDeep = PixelColor32.FromHex("#006B73");
+                var oceanLight = PixelColor32.FromHex("#1A8A8A");
+                var islandDark = PixelColor32.FromHex("#07545A");
+                var islandLight = PixelColor32.FromHex("#2A7470");
+
+                // Distant ocean shelf.
+                buffer.FillRect(0, 118, NativeWidth, 58, oceanDeep);
+                for (int x = 0; x < NativeWidth; x += 24)
+                {
+                    buffer.DrawLine(x, 126 + (x % 7), x + 10, 126 + (x % 7), oceanLight);
+                    buffer.DrawLine(x + 8, 141, x + 18, 141, oceanLight.Darken(0.2f));
+                }
+
+                // Low island silhouettes create depth behind the playable route.
+                for (int x = 0; x < NativeWidth; x++)
+                {
+                    int islandY = 126
+                        - (int)(Math.Sin(x * 0.028) * 10)
+                        - (int)(Math.Cos(x * 0.061) * 5);
+
+                    if (x < 55) islandY -= 13;
+                    if (x > 235 && x < 330) islandY -= 20;
+
+                    for (int y = islandY; y < 150; y++)
+                        buffer.SetPixel(x, y, islandDark);
+                }
+
+                // Chunky foliage/highlights break up the silhouette.
+                for (int x = 18; x < NativeWidth; x += 31)
+                {
+                    int y = 112 + (x % 19);
+                    buffer.FillRect(x, y, 7, 13, islandLight);
+                    buffer.FillRect(x - 3, y + 4, 13, 5, islandLight);
+                }
+
+                return;
+            }
+
+            // Generic distant ridgeline for the remaining biomes.
             int baseY = 130;
             for (int x = 0; x < NativeWidth; x++)
             {
@@ -135,9 +175,7 @@ namespace RhythmArmy.Visuals
                 int peakY = baseY - wave1 - wave2;
 
                 for (int y = peakY; y < NativeHeight; y++)
-                {
-                    buffer.SetPixel(x, y, mountainCol);
-                }
+                    buffer.SetPixel(x, y, farCol);
             }
         }
 
@@ -145,23 +183,70 @@ namespace RhythmArmy.Visuals
         {
             PixelColor32 midCol = GetBiomeMidColor(biome);
 
-            // Midground rolling hills and structural silhouettes
-            int baseY = 160;
+            if (biome == BiomeType.CoralCoast)
+            {
+                var cliffDark = PixelColor32.FromHex("#07545A");
+                var cliffMid = PixelColor32.FromHex("#0B6E68");
+                var cliffLight = PixelColor32.FromHex("#24937D");
+                var foliage = PixelColor32.FromHex("#3E8F63");
+                var coral = PixelColor32.FromHex("#D37B61");
+
+                // Layered coastal cliffs with stepped pixel contours.
+                int baseY = 178;
+                for (int x = 0; x < NativeWidth; x++)
+                {
+                    int hillY = baseY
+                        - (int)(Math.Sin(x * 0.033) * 18)
+                        - (int)(Math.Cos(x * 0.071) * 8);
+
+                    if (x > 75 && x < 155) hillY -= 13;
+                    if (x > 255 && x < 330) hillY -= 20;
+
+                    for (int y = hillY; y < NativeHeight; y++)
+                        buffer.SetPixel(x, y, cliffDark);
+                }
+
+                // Broad material bands make the cliffs read as pixel-painted terrain.
+                for (int x = 0; x < NativeWidth; x += 4)
+                {
+                    int y = 154 + (int)(Math.Sin(x * 0.045) * 12);
+                    buffer.FillRect(x, y, 4, 18, cliffMid);
+                    if (x % 13 < 7)
+                        buffer.FillRect(x, y + 2, 3, 7, cliffLight);
+                }
+
+                // Vegetation clusters and small coral outcrops.
+                for (int x = 22; x < NativeWidth - 12; x += 37)
+                {
+                    int y = 142 + (x % 24);
+                    buffer.FillRect(x, y, 5, 16, foliage);
+                    buffer.FillRect(x - 4, y + 3, 13, 4, foliage);
+                    buffer.FillRect(x - 2, y - 1, 9, 3, foliage);
+                }
+
+                for (int x = 42; x < NativeWidth; x += 67)
+                {
+                    int y = 168 + (x % 8);
+                    buffer.FillRect(x, y, 9, 7, coral);
+                    buffer.FillRect(x + 3, y - 4, 3, 5, coral);
+                }
+
+                return;
+            }
+
+            // Midground rolling hills and structural silhouettes for other biomes.
+            int genericBaseY = 160;
             for (int x = 0; x < NativeWidth; x++)
             {
                 int wave = (int)(Math.Sin(x * 0.035) * 20);
-                int hillY = baseY - wave;
-
+                int hillY = genericBaseY - wave;
                 for (int y = hillY; y < NativeHeight; y++)
-                {
                     buffer.SetPixel(x, y, midCol);
-                }
             }
 
             // Distinct Biome Landmarks
             if (biome == BiomeType.IronBastion)
             {
-                // Fortress Watchtowers
                 buffer.FillRect(80, 100, 24, 80, PixelColor32.ObsidianSlate);
                 buffer.FillRect(280, 110, 20, 70, PixelColor32.ObsidianSlate);
             }
@@ -187,19 +272,65 @@ namespace RhythmArmy.Visuals
         private static void DrawForegroundGround(PixelBitmapBuffer buffer, BiomeType biome)
         {
             PixelColor32 groundCol = GetBiomeGroundColor(biome);
-            PixelColor32 underCol = PixelColor32.FromHex("#1A202C");
+            PixelColor32 underCol = PixelColor32.FromHex("#3B3029");
 
-            int groundTopY = 175;
+            if (biome == BiomeType.CoralCoast)
+            {
+                var sandShadow = PixelColor32.FromHex("#B78355");
+                var sandMid = PixelColor32.FromHex("#D6A66A");
+                var sandLight = PixelColor32.FromHex("#F2CF88");
+                var wetSand = PixelColor32.FromHex("#7B7660");
+                var shell = PixelColor32.FromHex("#E5D2B8");
 
-            // Flat battle path lane for marching squad and enemies
-            buffer.FillRect(0, groundTopY, NativeWidth, 8, groundCol);
-            buffer.FillRect(0, groundTopY + 8, NativeWidth, NativeHeight - (groundTopY + 8), underCol);
+                int groundTopY = 170;
 
-            // Grass / Stone / Sand Tufts
+                // Deep foreground gives the characters a substantial surface to stand on.
+                buffer.FillRect(0, groundTopY, NativeWidth, NativeHeight - groundTopY, sandShadow);
+                buffer.FillRect(0, groundTopY + 7, NativeWidth, NativeHeight - groundTopY - 7, groundCol);
+
+                // Uneven shoreline edge.
+                for (int x = 0; x < NativeWidth; x += 3)
+                {
+                    int y = groundTopY + (int)(Math.Sin(x * 0.11) * 2);
+                    buffer.FillRect(x, y, 3, 3, sandLight);
+                }
+
+                // Painterly sand clusters.
+                for (int x = 7; x < NativeWidth; x += 19)
+                {
+                    int y = 184 + (x % 17);
+                    buffer.FillRect(x, y, 6, 2, sandShadow);
+                    buffer.FillRect(x + 2, y + 2, 3, 2, sandLight);
+                    if (x % 38 == 0)
+                        buffer.FillRect(x + 9, y - 3, 4, 3, wetSand);
+                }
+
+                // Small shells/pebbles provide scale.
+                for (int x = 13; x < NativeWidth; x += 47)
+                {
+                    int y = 198 + (x % 9);
+                    buffer.FillRect(x, y, 3, 2, shell);
+                    buffer.SetPixel(x + 1, y - 1, shell);
+                }
+
+                // Tufts and coastal grass along the upper edge.
+                for (int x = 5; x < NativeWidth; x += 16)
+                {
+                    buffer.DrawLine(x, groundTopY, x + 2, groundTopY - 5, sandLight);
+                    buffer.DrawLine(x + 3, groundTopY + 1, x + 5, groundTopY - 4, sandLight);
+                }
+
+                return;
+            }
+
+            int genericGroundTopY = 170;
+            buffer.FillRect(0, genericGroundTopY, NativeWidth, NativeHeight - genericGroundTopY, groundCol);
+            buffer.FillRect(0, genericGroundTopY + 10, NativeWidth, NativeHeight - genericGroundTopY - 10, underCol);
+
             for (int x = 4; x < NativeWidth; x += 16)
             {
-                buffer.DrawLine(x, groundTopY - 2, x + 2, groundTopY, groundCol);
-                buffer.DrawLine(x + 3, groundTopY - 3, x + 5, groundTopY, groundCol);
+                buffer.DrawLine(x, genericGroundTopY - 2, x + 2, genericGroundTopY, groundCol);
+                buffer.DrawLine(x + 3, genericGroundTopY - 3, x + 5, genericGroundTopY, groundCol);
             }
         }
 

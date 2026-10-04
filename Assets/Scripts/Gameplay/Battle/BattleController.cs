@@ -1,4 +1,5 @@
 using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RhythmArmy.Core.Combat;
@@ -66,6 +67,7 @@ namespace RhythmArmy.Gameplay.Battle
             BattleManager.OnCommandEvaluated += HandleCommandEvaluated;
             BattleManager.OnEnemySlain += HandleEnemySlain;
             BattleManager.OnCombatFeedback += HandleCombatFeedback;
+            BattleManager.OnUnitAnimationCue += HandleUnitAnimationCue;
         }
 
         public void StartBattle(MissionDef mission, List<UnitMember> roster)
@@ -196,6 +198,18 @@ namespace RhythmArmy.Gameplay.Battle
                         ev.ClearTelegraph();
                     }
                 }
+            }
+        }
+
+        private void HandleUnitAnimationCue(UnitAnimationCue cue)
+        {
+            if (cue == null) return;
+
+            foreach (var unit in UnitViews)
+            {
+                if (unit == null || unit.LiveData == null) continue;
+                if (cue.UnitId == null || cue.UnitId == unit.LiveData.Member.Id)
+                    unit.ApplyCombatAnimationCue(cue.Cue);
             }
         }
 

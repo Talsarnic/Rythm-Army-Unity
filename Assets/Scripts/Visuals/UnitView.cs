@@ -7,28 +7,14 @@ namespace RhythmArmy.Visuals
 {
     public enum UnitVisualState
     {
-        Idle,
-        Marching,
-        Attacking,
-        Defending,
-        Charging,
-        Jumping,
-        Hurt,
-        Dead,
-        Victory
+        Idle, Marching, Attacking, Defending, Charging, Jumping,
+        Hurt, Dead, Victory, Fever, HeroAbility
     }
 
-    /// <summary>
-    /// Presentation model for a friendly squad unit in the Moonlighter 2D pixel art style.
-    /// Handles sprite animation state, equipment overlay anchors, damage flash, and pixel-grid rendering.
-    /// </summary>
     public class UnitView
     {
         public LiveUnit LiveData { get; private set; }
-        public UnitMember UnitMember
-        {
-            get { return LiveData != null ? LiveData.Member : null; }
-        }
+        public UnitMember UnitMember { get { return LiveData != null ? LiveData.Member : null; } }
         public UnitVisualState CurrentState { get; private set; }
         public float VisualX { get; set; }
         public float VisualY { get; set; }
@@ -36,19 +22,27 @@ namespace RhythmArmy.Visuals
         public bool FacingRight { get; set; }
 
         public PixelAnimator Animator { get; private set; }
+        public UnitVisualProfile VisualProfile { get; private set; }
 
-        // Equipment visual sprite identifiers
         public string WeaponSpriteId { get; private set; }
         public string ArmorSpriteId { get; private set; }
         public string ShieldSpriteId { get; private set; }
         public string HelmetSpriteId { get; private set; }
+        public string MaskSpriteId { get; private set; }
+        public string RelicSpriteId { get; private set; }
 
-        // Visual FX / Feedback
-        public float HurtFlashTimer { get; private set; }
-        public bool IsFlashingWhite
+        public bool HasVisibleEquipment
         {
-            get { return HurtFlashTimer > 0f; }
+            get
+            {
+                return VisualProfile != null &&
+                    (VisualProfile.HasWeapon || VisualProfile.HasShield ||
+                     VisualProfile.HasHelmet || VisualProfile.HasMask || VisualProfile.HasRelic);
+            }
         }
+
+        public float HurtFlashTimer { get; private set; }
+        public bool IsFlashingWhite { get { return HurtFlashTimer > 0f; } }
         public float FeverSparkleTimer { get; private set; }
         public bool IsFeverActive { get; set; }
 
@@ -62,7 +56,8 @@ namespace RhythmArmy.Visuals
             FacingRight = true;
             CurrentState = UnitVisualState.Idle;
 
-            Animator = PixelAnimator.CreateStandardUnitAnimator(liveData.Member.Class.ToString().ToLower(), 32);
+            Animator = PixelAnimator.CreateStandardUnitAnimator(
+                liveData.Member.Class.ToString().ToLowerInvariant(), 32);
             RefreshEquipmentSprites();
         }
 
@@ -71,69 +66,55 @@ namespace RhythmArmy.Visuals
             var m = UnitMember;
             if (m == null) return;
 
-            WeaponSpriteId = !string.IsNullOrEmpty(m.WeaponId) ? "item_" + m.WeaponId : null;
-            ShieldSpriteId = !string.IsNullOrEmpty(m.ShieldId) ? "item_" + m.ShieldId : null;
-            HelmetSpriteId = !string.IsNullOrEmpty(m.HelmetId) ? "item_" + m.HelmetId : null;
+            VisualProfile = UnitVisualProfile.FromUnit(m);
+            WeaponSpriteId = VisualProfile.WeaponSpriteId;
+            ArmorSpriteId = VisualProfile.ArmorSpriteId;
+            ShieldSpriteId = VisualProfile.ShieldSpriteId;
+            HelmetSpriteId = VisualProfile.HelmetSpriteId;
+            MaskSpriteId = VisualProfile.MaskSpriteId;
+            RelicSpriteId = VisualProfile.RelicSpriteId;
         }
 
         public void SetState(UnitVisualState newState)
         {
-            if (CurrentState == UnitVisualState.Dead && newState != UnitVisualState.Idle)
-                return; // Dead units remain dead until revived
+            if (CurrentState == UnitVisualState.Dead &&
+                newState != UnitVisualState.Idle &&
+                newState != UnitVisualState.Victory)
+                return;
 
             CurrentState = newState;
-
             switch (newState)
             {
-                case UnitVisualState.Idle:
-                    Animator.Play("Idle");
-                    break;
-                case UnitVisualState.Marching:
-                    Animator.Play("March");
-                    break;
-                case UnitVisualState.Attacking:
-                    Animator.Play("Attack");
-                    break;
-                case UnitVisualState.Defending:
-                    Animator.Play("Defend");
-                    break;
-                case UnitVisualState.Charging:
-                    Animator.Play("March"); // Charging uses intense march cycle
-                    break;
-                case UnitVisualState.Jumping:
-                    Animator.Play("March");
-                    break;
+                case UnitVisualState.Idle: Animator.Play("Idle"); break;
+                case UnitVisualState.Marching: Animator.Play("March"); break;
+                case UnitVisualState.Attacking: Animator.Play("Attack"); break;
+                case UnitVisualState.Defending: Animator.Play("Defend"); break;
+                case UnitVisualState.Charging: Animator.Play("March"); break;
+                case UnitVisualState.Jumping: Animator.Play("Jump"); break;
                 case UnitVisualState.Hurt:
                     Animator.Play("Hurt");
                     HurtFlashTimer = 0.18f;
                     break;
-                case UnitVisualState.Dead:
-                    Animator.Play("Death");
-                    break;
+                case UnitVisualState.Dead: Animator.Play("Death"); break;
                 case UnitVisualState.Victory:
+                case UnitVisualState.Fever:
                     Animator.Play("Fever");
                     break;
+                case UnitVisualState.HeroAbility: Animator.Play("HeroAbility"); break;
             }
         }
 
         public void TakeDamage(float damage)
         {
             HurtFlashTimer = 0.18f;
-            if (LiveData == null || !LiveData.IsAlive)
-            {
-                SetState(UnitVisualState.Dead);
-            }
-            else
-            {
-                SetState(UnitVisualState.Hurt);
-            }
+            if (LiveData == null || !LiveData.IsAlive) SetState(UnitVisualState.Dead);
+            else SetState(UnitVisualState.Hurt);
         }
 
         public void Update(float deltaTime)
         {
             if (LiveData != null)
             {
-                // Smoothly interpolate visual position to live physics position
                 VisualX += (LiveData.X - VisualX) * Math.Min(1f, 15f * deltaTime);
                 VisualY += (LiveData.Y - VisualY) * Math.Min(1f, 15f * deltaTime);
             }
@@ -143,16 +124,12 @@ namespace RhythmArmy.Visuals
             if (HurtFlashTimer > 0f)
             {
                 HurtFlashTimer -= deltaTime;
-                if (HurtFlashTimer <= 0f && LiveData != null && LiveData.IsAlive && CurrentState == UnitVisualState.Hurt)
-                {
+                if (HurtFlashTimer <= 0f && LiveData != null &&
+                    LiveData.IsAlive && CurrentState == UnitVisualState.Hurt)
                     SetState(UnitVisualState.Idle);
-                }
             }
 
-            if (IsFeverActive)
-            {
-                FeverSparkleTimer += deltaTime;
-            }
+            if (IsFeverActive) FeverSparkleTimer += deltaTime;
         }
     }
 }

@@ -61,7 +61,7 @@ namespace RhythmArmy.UnityPresentation
             if (scene.name != "Battle_CoralCoast_01" && scene.name != "BattleScene")
                 return;
 
-            if (FindObjectOfType<BattleSceneRuntimePresenter>() != null)
+            if (FindAnyObjectByType<BattleSceneRuntimePresenter>() != null)
                 return;
 
             var go = new GameObject("BattleSceneRuntimePresenter");
@@ -96,7 +96,7 @@ namespace RhythmArmy.UnityPresentation
 
             _battle = new BattleController();
             _battle.StartBattle(mission, save.Roster);
-            _battle.OnCombatFeedback += HandleCombatFeedback;
+            _battle.BattleManager.OnCombatFeedback += HandleCombatFeedback;
             _lastTerrain = _battle.BattleManager.State.CurrentTerrain.DisplayName;
 
             BuildInitialActors();
@@ -172,7 +172,6 @@ namespace RhythmArmy.UnityPresentation
             if (texture == null) return;
 
             float width = texture.width / PixelsPerUnit;
-            int tiles = 5;
             for (int i = -2; i <= 2; i++)
             {
                 var go = new GameObject("BackgroundLayer_" + sortingOrder + "_" + i);
@@ -297,8 +296,8 @@ namespace RhythmArmy.UnityPresentation
 
             int size = actor.SpriteSize;
             var frame = actor.Enemy.Animator.CurrentFrame;
-            int row = frame != null ? frame.Rect.Y / 32 : 0;
-            int index = frame != null ? frame.Rect.X / 32 : 0;
+            int row = frame != null ? frame.Rect.Y / size : 0;
+            int index = frame != null ? frame.Rect.X / size : 0;
             actor.Renderer.sprite = CreateSheetSprite(actor.Sheet, index * size, row * size, size, size, "EnemyFrame");
             actor.Object.transform.position = ToWorldPosition(actor.Enemy.VisualX, actor.Enemy.VisualY, 0.4f);
             actor.Object.transform.localScale = Vector3.one * actor.Enemy.SpriteScale;
@@ -461,7 +460,6 @@ namespace RhythmArmy.UnityPresentation
 
         private void HandleCombatFeedback(CombatFeedbackEvent feedback)
         {
-            if (feedback == null) return;
             if (feedback.Type == CombatFeedbackType.TerrainChanged)
                 _lastTerrain = feedback.AttackName;
         }

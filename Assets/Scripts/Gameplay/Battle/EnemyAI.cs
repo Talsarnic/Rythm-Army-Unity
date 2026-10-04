@@ -116,49 +116,6 @@ namespace RhythmArmy.Gameplay.Battle
             return StatusEffects.Any(s => s.Type == type && s.BeatsRemaining > 0);
         }
 
-        private static bool ResolvePendingNormalAttack(BattleState state, EnemyCombatState ai, Random rng)
-        {
-            if (ai.AttackWindupBeats <= 0) return false;
-
-            ai.AttackWindupBeats--;
-            ai.State = ai.AttackWindupBeats > 0 ? EnemyState.Telegraphing : EnemyState.Attacking;
-
-            if (ai.AttackWindupBeats > 0) return true;
-
-            switch (ai.PendingAttackType)
-            {
-                case NormalEnemyAttackType.RangedPhysical:
-                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Physical, rng);
-                    break;
-                case NormalEnemyAttackType.RangedFire:
-                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Fire, rng);
-                    break;
-                case NormalEnemyAttackType.Sonic:
-                    ExecuteEnemySonicAttack(state, ai.Enemy, ai.PendingAttackDamage, rng);
-                    break;
-                default:
-                    float damage = ai.Enemy.Kind == EnemyKind.TribeHammerer ? 18f :
-                                   ai.Enemy.Kind == EnemyKind.TribeBrawler ? 15f :
-                                   ai.Enemy.Kind == EnemyKind.TribeSkyrider ? 14f : 12f;
-                    ExecuteEnemyMeleeAttack(state, ai.Enemy, ai.PendingAttackDamage > 0f ? ai.PendingAttackDamage : damage, rng);
-                    break;
-            }
-
-            ai.PendingAttackName = null;
-            return true;
-        }
-
-        private static void BeginNormalAttackTelegraph(BattleState state, EnemyCombatState ai, NormalEnemyAttackType type, string name)
-        {
-            ai.PendingAttackType = type;
-            ai.PendingAttackName = name;
-            ai.PendingAttackDamage = 0f;
-            ai.AttackWindupBeats = 1;
-            ai.State = EnemyState.Telegraphing;
-            state.PendingCombatFeedback.Add(
-                CombatFeedbackEvent.EnemyAttackTelegraph(ai.Enemy, name));
-        }
-
         public void AddStatus(StatusEffectType type, int durationBeats, float power = 0f)
         {
             var existing = StatusEffects.FirstOrDefault(s => s.Type == type);
@@ -199,6 +156,82 @@ namespace RhythmArmy.Gameplay.Battle
 
     public static class EnemyAISystem
     {
+        internal static bool ResolvePendingNormalAttack(BattleState state, EnemyCombatState ai, Random rng)
+        {
+            if (ai.AttackWindupBeats <= 0) return false;
+            ai.AttackWindupBeats--;
+            ai.State = ai.AttackWindupBeats > 0 ? EnemyState.Telegraphing : EnemyState.Attacking;
+            if (ai.AttackWindupBeats > 0) return true;
+
+            switch (ai.PendingAttackType)
+            {
+                case NormalEnemyAttackType.RangedPhysical:
+                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Physical, rng);
+                    break;
+                case NormalEnemyAttackType.RangedFire:
+                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Fire, rng);
+                    break;
+                case NormalEnemyAttackType.Sonic:
+                    ExecuteEnemySonicAttack(state, ai.Enemy, ai.PendingAttackDamage, rng);
+                    break;
+                default:
+                    float damage = ai.Enemy.Kind == EnemyKind.TribeHammerer ? 18f :
+                                   ai.Enemy.Kind == EnemyKind.TribeBrawler ? 15f :
+                                   ai.Enemy.Kind == EnemyKind.TribeSkyrider ? 14f : 12f;
+                    ExecuteEnemyMeleeAttack(state, ai.Enemy,
+                        ai.PendingAttackDamage > 0f ? ai.PendingAttackDamage : damage, rng);
+                    break;
+            }
+
+            ai.PendingAttackName = null;
+            return true;
+        }
+
+        internal static void BeginNormalAttackTelegraph(BattleState state, EnemyCombatState ai, NormalEnemyAttackType type, string name)
+        {
+            ai.PendingAttackType = type;
+            ai.PendingAttackName = name;
+            ai.PendingAttackDamage = 0f;
+            ai.AttackWindupBeats = 1;
+            ai.State = EnemyState.Telegraphing;
+            state.PendingCombatFeedback.Add(CombatFeedbackEvent.EnemyAttackTelegraph(ai.Enemy, name));
+        }
+
+        public static void ExecuteEnemyMeleeAttack(BattleState state, LiveEnemy enemy, float baseDamage, Random rng)
+        {
+            var target = state.Units.Where(u => u.IsAlive && u.Member.Class != UnitClass.Banner)
+                .OrderBy(u => Math.Abs(u.X - enemy.X)).FirstOrDefault();
+            if (target == null || Math.Abs(target.X - enemy.X) > 110f) return;
+            ApplyEnemyDamage(state, enemy, target, baseDamage, DamageElement.Physical, rng);
+        }
+
+        public static void ExecuteEnemyRangedAttack(BattleState state, LiveEnemy enemy, float baseDamage, DamageElement element, Random rng)
+        {
+            var target = state.Units.Where(u => u.IsAlive && u.Member.Class != UnitClass.Banner)
+                .OrderBy(u => Math.Abs(u.X - enemy.X)).FirstOrDefault();
+            if (target == null || Math.Abs(target.X - enemy.X) > 520f) return;
+            ApplyEnemyDamage(state, enemy, target, baseDamage, element, rng);
+        }
+
+        public static void ExecuteEnemySonicAttack(BattleState state, LiveEnemy enemy, float baseDamage, Random rng)
+        {
+            var targets = state.Units.Where(u => u.IsAlive && u.Member.Class != UnitClass.Banner &&
+                                                  Math.Abs(u.X - enemy.X) <= 180f).ToList();
+            foreach (var target in targets)
+                ApplyEnemyDamage(state, enemy, target, baseDamage, DamageElement.Sonic, rng);
+        }
+
+        private static void ApplyEnemyDamage(BattleState state, LiveEnemy enemy, LiveUnit target, float baseDamage, DamageElement element, Random rng)
+        {
+            var stats = CombatFormulas.CalculateMemberStats(target.Member);
+            float damage = baseDamage * (100f / (100f + Math.Max(0f, stats.Defense)));
+            damage *= 0.90f + (float)rng.NextDouble() * 0.20f;
+            if (state.IsDefending) damage *= 0.45f;
+            damage = Math.Max(1f, (float)Math.Round(damage, 1));
+            target.CurrentHp = Math.Max(0f, target.CurrentHp - damage);
+            state.PendingCombatFeedback.Add(CombatFeedbackEvent.EnemyAttackImpact(enemy, target, damage));
+        }
+
         public static void UpdateEnemyTurn(BattleState state, Dictionary<string, EnemyCombatState> enemyStates, Random rng = null)
         {
             rng = rng ?? new Random();

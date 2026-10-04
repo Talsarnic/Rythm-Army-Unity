@@ -37,6 +37,37 @@ namespace RhythmArmy.Visuals
         public static PixelColor32 DragonRuby { get { return new PixelColor32(239, 83, 80, 255); } }
         public static PixelColor32 StarGold { get { return new PixelColor32(255, 215, 64, 255); } }
 
+        // Moonlighter Shading Ramps
+        public static PixelColor32 SkinToneLight { get { return new PixelColor32(255, 224, 178, 255); } }
+        public static PixelColor32 SkinToneMid { get { return new PixelColor32(255, 204, 128, 255); } }
+        public static PixelColor32 SkinToneShadow { get { return new PixelColor32(230, 140, 60, 255); } }
+        public static PixelColor32 LeatherDark { get { return new PixelColor32(74, 45, 35, 255); } }
+        public static PixelColor32 LeatherMid { get { return new PixelColor32(121, 85, 72, 255); } }
+        public static PixelColor32 LeatherLight { get { return new PixelColor32(161, 118, 98, 255); } }
+        public static PixelColor32 SteelDark { get { return new PixelColor32(55, 71, 79, 255); } }
+        public static PixelColor32 SteelMid { get { return new PixelColor32(120, 144, 156, 255); } }
+        public static PixelColor32 SteelLight { get { return new PixelColor32(207, 216, 220, 255); } }
+        public static PixelColor32 SteelGlint { get { return new PixelColor32(250, 250, 255, 255); } }
+        public static PixelColor32 GoldDark { get { return new PixelColor32(197, 139, 18, 255); } }
+        public static PixelColor32 GoldMid { get { return new PixelColor32(255, 179, 0, 255); } }
+        public static PixelColor32 GoldLight { get { return new PixelColor32(255, 224, 130, 255); } }
+
+        public PixelColor32 Darken(float factor)
+        {
+            byte r = (byte)Math.Max(0, Math.Min(255, (int)(R * (1f - factor))));
+            byte g = (byte)Math.Max(0, Math.Min(255, (int)(G * (1f - factor))));
+            byte b = (byte)Math.Max(0, Math.Min(255, (int)(B * (1f - factor))));
+            return new PixelColor32(r, g, b, A);
+        }
+
+        public PixelColor32 Lighten(float factor)
+        {
+            byte r = (byte)Math.Max(0, Math.Min(255, (int)(R + (255 - R) * factor)));
+            byte g = (byte)Math.Max(0, Math.Min(255, (int)(G + (255 - G) * factor)));
+            byte b = (byte)Math.Max(0, Math.Min(255, (int)(B + (255 - B) * factor)));
+            return new PixelColor32(r, g, b, A);
+        }
+
         public static PixelColor32 FromHex(string hex)
         {
             if (string.IsNullOrEmpty(hex)) return Black;
@@ -543,6 +574,55 @@ namespace RhythmArmy.Visuals
             }
             return crc ^ 0xFFFFFFFFu;
         }
+
+        public PixelBitmapBuffer ExtractFrame(int ox, int oy, int w, int h)
+        {
+            var frame = new PixelBitmapBuffer(w, h);
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    frame.SetPixel(x, y, GetPixel(ox + x, oy + y));
+                }
+            }
+            return frame;
+        }
+
+#if !UNITY_5_3_OR_NEWER
+        /// <summary>
+        /// Converts the buffer to a System.Drawing.Bitmap for desktop GDI+ rendering.
+        /// </summary>
+        public System.Drawing.Bitmap ToGdiBitmap()
+        {
+            return ExtractFrameToGdiBitmap(0, 0, Width, Height);
+        }
+
+        /// <summary>
+        /// Extracts a sub-rectangle frame into a System.Drawing.Bitmap.
+        /// </summary>
+        public System.Drawing.Bitmap ExtractFrameToGdiBitmap(int ox, int oy, int w, int h)
+        {
+            var bmp = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            var rect = new System.Drawing.Rectangle(0, 0, w, h);
+            var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            byte[] bgra = new byte[w * h * 4];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    var c = GetPixel(ox + x, oy + y);
+                    int idx = (y * w + x) * 4;
+                    bgra[idx + 0] = c.B;
+                    bgra[idx + 1] = c.G;
+                    bgra[idx + 2] = c.R;
+                    bgra[idx + 3] = c.A;
+                }
+            }
+            System.Runtime.InteropServices.Marshal.Copy(bgra, 0, bmpData.Scan0, bgra.Length);
+            bmp.UnlockBits(bmpData);
+            return bmp;
+        }
+#endif
 
         private static void WriteInt16LE(byte[] buffer, int offset, short value)
         {

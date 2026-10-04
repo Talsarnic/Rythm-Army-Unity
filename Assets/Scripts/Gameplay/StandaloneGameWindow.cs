@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
@@ -12,13 +13,14 @@ using RhythmArmy.Core.Rhythm;
 using RhythmArmy.Gameplay;
 using RhythmArmy.Gameplay.Battle;
 using RhythmArmy.Gameplay.Camp;
+using RhythmArmy.Visuals;
 
 namespace RhythmArmy.Standalone
 {
     /// <summary>
     /// Interactive Windows standalone playable game application for Rhythm Army.
     /// Provides real-time rendering, sound playback, keyboard/mouse controls,
-    /// Camp Hub management, and Battle simulation.
+    /// Camp Hub management, and Battle simulation with Moonlighter-style pixel art.
     /// </summary>
     public class StandaloneGameWindow : Form
     {
@@ -33,6 +35,8 @@ namespace RhythmArmy.Standalone
 
         private string _statusToast = "Welcome to Rhythm Army! Press [Enter] or [Space] in dialogue. Use [A/S/D/F] to drum.";
         private float _toastTimer = 5.0f;
+
+        private readonly Dictionary<string, Bitmap> _bitmapCache = new Dictionary<string, Bitmap>();
 
         public StandaloneGameWindow()
         {
@@ -109,81 +113,137 @@ namespace RhythmArmy.Standalone
             }
             catch
             {
-                // Catch background audio concurrency
+                // Audio error suppression
             }
+        }
+
+        private Bitmap GetUnitSpriteSheet(UnitClass unitClass, Subspecies species)
+        {
+            string key = "unit_" + unitClass + "_" + species;
+            Bitmap bmp;
+            if (!_bitmapCache.TryGetValue(key, out bmp))
+            {
+                var buffer = PixelAssetGenerator.GenerateUnitSpriteSheet(unitClass, species);
+                bmp = buffer.ToGdiBitmap();
+                _bitmapCache[key] = bmp;
+            }
+            return bmp;
+        }
+
+        private Bitmap GetEnemySpriteSheet(EnemyKind kind)
+        {
+            string key = "enemy_" + kind;
+            Bitmap bmp;
+            if (!_bitmapCache.TryGetValue(key, out bmp))
+            {
+                var buffer = PixelAssetGenerator.GenerateEnemySpriteSheet(kind);
+                bmp = buffer.ToGdiBitmap();
+                _bitmapCache[key] = bmp;
+            }
+            return bmp;
+        }
+
+        private Bitmap GetCampStructureBitmap(CampStructureType structure)
+        {
+            string key = "structure_" + structure;
+            Bitmap bmp;
+            if (!_bitmapCache.TryGetValue(key, out bmp))
+            {
+                var buffer = CampArtGenerator.GenerateCampStructure(structure);
+                bmp = buffer.ToGdiBitmap();
+                _bitmapCache[key] = bmp;
+            }
+            return bmp;
+        }
+
+        private Bitmap GetNPCSpriteSheet(CampNPCType npc)
+        {
+            string key = "npc_" + npc;
+            Bitmap bmp;
+            if (!_bitmapCache.TryGetValue(key, out bmp))
+            {
+                var buffer = CampArtGenerator.GenerateNPCSpriteSheet(npc);
+                bmp = buffer.ToGdiBitmap();
+                _bitmapCache[key] = bmp;
+            }
+            return bmp;
         }
 
         private void OnGameKeyDown(object sender, KeyEventArgs e)
         {
-            if (_runtime.Orchestrator.CurrentState == GameFlowState.DialogueCutscene)
+            var orch = _runtime.Orchestrator;
+            var battle = orch.BattleMgr;
+
+            if (orch.CurrentState == GameFlowState.BattleActive)
             {
-                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter || e.KeyCode == Keys.Z)
+                // Drum inputs
+                if (e.KeyCode == Keys.A || e.KeyCode == Keys.Left || e.KeyCode == Keys.J)
                 {
-                    _runtime.Orchestrator.AdvanceDialogue();
-                    return;
+                    battle.HandleDrumInput(DrumId.Boom);
+                    PlayDrumSFX(DrumId.Boom);
+                }
+                else if (e.KeyCode == Keys.S || e.KeyCode == Keys.Right || e.KeyCode == Keys.K)
+                {
+                    battle.HandleDrumInput(DrumId.Tak);
+                    PlayDrumSFX(DrumId.Tak);
+                }
+                else if (e.KeyCode == Keys.D || e.KeyCode == Keys.Down || e.KeyCode == Keys.I)
+                {
+                    battle.HandleDrumInput(DrumId.Rat);
+                    PlayDrumSFX(DrumId.Rat);
+                }
+                else if (e.KeyCode == Keys.F || e.KeyCode == Keys.Up || e.KeyCode == Keys.L)
+                {
+                    battle.HandleDrumInput(DrumId.Ting);
+                    PlayDrumSFX(DrumId.Ting);
                 }
             }
-
-            if (_runtime.Orchestrator.CurrentState == GameFlowState.CampHub)
+            else if (orch.CurrentState == GameFlowState.DialogueCutscene)
+            {
+                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
+                {
+                    orch.AdvanceDialogue();
+                }
+            }
+            else if (orch.CurrentState == GameFlowState.CampHub)
             {
                 if (e.KeyCode == Keys.D1 || e.KeyCode == Keys.NumPad1)
                 {
-                    _runtime.StartMission("m01-patata-plains");
+                    orch.LaunchMission("mission-1-coral-coast");
                 }
                 else if (e.KeyCode == Keys.D2 || e.KeyCode == Keys.NumPad2)
                 {
-                    _runtime.StartMission("m02-jungle-fort");
+                    orch.LaunchMission("mission-2-jungle-fort");
                 }
                 else if (e.KeyCode == Keys.D3 || e.KeyCode == Keys.NumPad3)
                 {
-                    _runtime.StartMission("m03-misty-swamp");
+                    orch.LaunchMission("mission-3-misty-swamp");
                 }
                 else if (e.KeyCode == Keys.D4 || e.KeyCode == Keys.NumPad4)
                 {
-                    _runtime.StartMission("m04-volcanic-caldera");
+                    orch.LaunchMission("mission-4-volcanic-caldera");
                 }
                 else if (e.KeyCode == Keys.B)
                 {
-                    // Quick recruit
-                    _runtime.Orchestrator.Save.Roster.Add(new UnitMember(Guid.NewGuid().ToString(), UnitClass.Archer, 1));
-                    _statusToast = "Recruited Archer in Barracks!";
-                    _toastTimer = 2.0f;
+                    // Recruit a unit
+                    var newUnit = new UnitMember(Guid.NewGuid().ToString().Substring(0, 8), UnitClass.Swordsman, 1, null, null, null, Subspecies.Normal);
+                    orch.Save.Roster.Add(newUnit);
+                    _statusToast = "Recruited a new Swordsman to the army!";
+                    _toastTimer = 2.5f;
                 }
                 else if (e.KeyCode == Keys.O)
                 {
-                    var optSummary = EquipmentOptimizer.OptimizeArmyWithSummary(_runtime.Orchestrator.Save);
-                    _statusToast = optSummary.SummaryMessage;
-                    _toastTimer = 3.5f;
-                }
-                return;
-            }
-
-            if (_runtime.Orchestrator.CurrentState == GameFlowState.BattleActive)
-            {
-                DrumId? drum = null;
-                if (e.KeyCode == Keys.A || e.KeyCode == Keys.Left || e.KeyCode == Keys.J) drum = DrumId.Boom;
-                if (e.KeyCode == Keys.S || e.KeyCode == Keys.Right || e.KeyCode == Keys.K) drum = DrumId.Tak;
-                if (e.KeyCode == Keys.D || e.KeyCode == Keys.Down || e.KeyCode == Keys.I) drum = DrumId.Rat;
-                if (e.KeyCode == Keys.F || e.KeyCode == Keys.Up || e.KeyCode == Keys.L) drum = DrumId.Ting;
-
-                if (drum.HasValue)
-                {
-                    PlayDrumSFX(drum.Value);
-                    var judgment = _runtime.Orchestrator.HandleDrumInput(drum.Value);
-                    _statusToast = string.Format("[DRUM] {0} -> {1} ({2:+0.0;-0.0;0.0}ms)", drum.Value, judgment.Grade, judgment.DeltaMs);
-                    _toastTimer = 1.5f;
-                }
-                else if (e.KeyCode == Keys.Escape)
-                {
-                    _runtime.ReturnToCamp();
+                    // Auto optimize gear
+                    var summary = EquipmentOptimizer.OptimizeArmyWithSummary(orch.Save);
+                    _statusToast = string.Format("Auto-Optimized Gear! Score Gain: +{0:0}", summary.ScoreDelta);
+                    _toastTimer = 2.5f;
                 }
             }
-
-            if (_runtime.Orchestrator.CurrentState == GameFlowState.BattleResultsScreen)
+            else if (orch.CurrentState == GameFlowState.BattleResultsScreen)
             {
-                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter || e.KeyCode == Keys.Escape)
+                if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)
                 {
-                    _runtime.ReturnToCamp();
+                    orch.ReturnToCamp();
                 }
             }
         }
@@ -265,35 +325,61 @@ namespace RhythmArmy.Standalone
             using (var font = new Font("Segoe UI", 18, FontStyle.Bold))
             using (var brush = new SolidBrush(Color.FromArgb(255, 220, 130)))
             {
-                g.DrawString("CAMP OF THE ALMIGHTY CREATOR", font, brush, 40, 75);
+                g.DrawString("CAMP OF THE ALMIGHTY CREATOR", font, brush, 40, 65);
             }
 
-            // Camp Buildings & Activities
-            int boxY = 130;
+            // Render Camp Hub Structure & NPC Sprites
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+
+            // Tree of Life Altar & Priestess Leah
+            var treeBmp = GetCampStructureBitmap(CampStructureType.TreeOfLifeAltar);
+            g.DrawImage(treeBmp, new Rectangle(40, 110, 96, 96));
+            var leahBmp = GetNPCSpriteSheet(CampNPCType.PriestessLeah);
+            g.DrawImage(leahBmp, new Rectangle(120, 140, 48, 48), new Rectangle(0, 0, 48, 48), GraphicsUnit.Pixel);
+
+            // Blacksmith Forge & Vulcan
+            var forgeBmp = GetCampStructureBitmap(CampStructureType.BlacksmithForge);
+            g.DrawImage(forgeBmp, new Rectangle(200, 110, 96, 96));
+
+            // Merchant Stall & Leo
+            var stallBmp = GetCampStructureBitmap(CampStructureType.MerchantStall);
+            g.DrawImage(stallBmp, new Rectangle(340, 110, 96, 96));
+
+            // Chef Stewpot
+            var potBmp = GetCampStructureBitmap(CampStructureType.ChefStewpot);
+            g.DrawImage(potBmp, new Rectangle(480, 110, 80, 80));
+
+            // Barracks Pavilion
+            var barBmp = GetCampStructureBitmap(CampStructureType.BarracksPavilion);
+            g.DrawImage(barBmp, new Rectangle(580, 110, 96, 96));
+
+            // Camp Expeditions & Activities Options
+            int boxY = 220;
             DrawCampOption(g, 40, boxY, "1. Expedition: Mission 1 - Coral Coast", "[Press 1 to Deploy Squad]", Color.FromArgb(46, 117, 89));
-            DrawCampOption(g, 40, boxY + 70, "2. Expedition: Mission 2 - Jungle Fort", "[Press 2 to Deploy Squad]", Color.FromArgb(70, 130, 180));
-            DrawCampOption(g, 40, boxY + 140, "3. Expedition: Mission 3 - Misty Swamp", "[Press 3 to Deploy Squad]", Color.FromArgb(106, 90, 205));
-            DrawCampOption(g, 40, boxY + 210, "4. Expedition: Mission 4 - Volcanic Caldera", "[Press 4 to Deploy Boss Hunt]", Color.FromArgb(180, 60, 50));
-            DrawCampOption(g, 40, boxY + 280, "B. Barracks Pavilion", "[Press B to Recruit Unit]", Color.FromArgb(140, 100, 40));
-            DrawCampOption(g, 40, boxY + 350, "O. Auto-Optimize Squad Gear", "[Press O to Auto-Equip Best Gear]", Color.FromArgb(30, 130, 130));
+            DrawCampOption(g, 40, boxY + 55, "2. Expedition: Mission 2 - Jungle Fort", "[Press 2 to Deploy Squad]", Color.FromArgb(70, 130, 180));
+            DrawCampOption(g, 40, boxY + 110, "3. Expedition: Mission 3 - Misty Swamp", "[Press 3 to Deploy Squad]", Color.FromArgb(106, 90, 205));
+            DrawCampOption(g, 40, boxY + 165, "4. Expedition: Mission 4 - Volcanic Caldera", "[Press 4 to Deploy Boss Hunt]", Color.FromArgb(180, 60, 50));
+            DrawCampOption(g, 40, boxY + 220, "B. Barracks Pavilion", "[Press B to Recruit Unit]", Color.FromArgb(140, 100, 40));
+            DrawCampOption(g, 40, boxY + 275, "O. Auto-Optimize Squad Gear", "[Press O to Auto-Equip Best Gear]", Color.FromArgb(30, 130, 130));
 
             // Controls Sidebar
             using (var brush = new SolidBrush(Color.FromArgb(25, 32, 45)))
             {
-                g.FillRectangle(brush, Width - 320, 70, 280, 420);
+                g.FillRectangle(brush, Width - 320, 65, 280, 435);
             }
             using (var pen = new Pen(Color.FromArgb(60, 75, 100), 1))
             {
-                g.DrawRectangle(pen, Width - 320, 70, 280, 420);
+                g.DrawRectangle(pen, Width - 320, 65, 280, 435);
             }
 
             using (var font = new Font("Segoe UI", 12, FontStyle.Bold))
             using (var brush = new SolidBrush(Color.White))
             {
-                g.DrawString("BATTLE CONTROLS", font, brush, Width - 300, 90);
+                g.DrawString("BATTLE CONTROLS", font, brush, Width - 300, 80);
             }
 
-            using (var font = new Font("Segoe UI", 10, FontStyle.Regular))
+            using (var font = new Font("Segoe UI", 9.5f, FontStyle.Regular))
             using (var brush = new SolidBrush(Color.FromArgb(200, 210, 230)))
             {
                 string info = "4-Beat Drum Chants:\n\n" +
@@ -307,34 +393,34 @@ namespace RhythmArmy.Standalone
                               "• Defend: RAT RAT BOOM TAK\n" +
                               "• Miracle: TING TING TING TAK\n\n" +
                               "Tip: Keep rhythm to reach FEVER!";
-                g.DrawString(info, font, brush, Width - 300, 130);
+                g.DrawString(info, font, brush, Width - 300, 115);
             }
         }
 
         private void DrawCampOption(Graphics g, int x, int y, string title, string subtitle, Color accent)
         {
-            using (var brush = new SolidBrush(Color.FromArgb(22, 28, 40)))
+            using (var brush = new SolidBrush(Color.FromArgb(25, 32, 44)))
             {
-                g.FillRectangle(brush, x, y, 620, 55);
+                g.FillRectangle(brush, x, y, 620, 48);
             }
             using (var pen = new Pen(accent, 2))
             {
-                g.DrawRectangle(pen, x, y, 620, 55);
+                g.DrawRectangle(pen, x, y, 620, 48);
             }
-            using (var barBrush = new SolidBrush(accent))
+            using (var accentBrush = new SolidBrush(accent))
             {
-                g.FillRectangle(barBrush, x, y, 6, 55);
+                g.FillRectangle(accentBrush, x, y, 6, 48);
             }
 
-            using (var font = new Font("Segoe UI", 12, FontStyle.Bold))
+            using (var font = new Font("Segoe UI", 11, FontStyle.Bold))
             using (var brush = new SolidBrush(Color.White))
             {
-                g.DrawString(title, font, brush, x + 20, y + 8);
+                g.DrawString(title, font, brush, x + 18, y + 6);
             }
-            using (var font = new Font("Segoe UI", 9, FontStyle.Italic))
+            using (var font = new Font("Segoe UI", 9, FontStyle.Regular))
             using (var brush = new SolidBrush(Color.FromArgb(180, 190, 210)))
             {
-                g.DrawString(subtitle, font, brush, x + 20, y + 30);
+                g.DrawString(subtitle, font, brush, x + 18, y + 26);
             }
         }
 
@@ -344,7 +430,7 @@ namespace RhythmArmy.Standalone
             if (battle == null || battle.State == null) return;
             var hud = _runtime.Orchestrator.BattleHUD;
 
-            // Biome Battlefield
+            // Biome Battlefield Sky & Atmosphere
             Color bgTop = battle.Rhythm.IsFever ? Color.FromArgb(55, 45, 70) : Color.FromArgb(40, 55, 75);
             Color bgBottom = battle.Rhythm.IsFever ? Color.FromArgb(30, 20, 40) : Color.FromArgb(20, 30, 40);
             using (var brush = new LinearGradientBrush(new Point(0, 50), new Point(0, Height), bgTop, bgBottom))
@@ -363,8 +449,8 @@ namespace RhythmArmy.Standalone
                 }
             }
 
-            // Ground line
-            int groundY = Height - 180;
+            // Ground Line & Biome Earth
+            int groundY = Height - 160;
             using (var groundBrush = new SolidBrush(Color.FromArgb(35, 45, 30)))
             {
                 g.FillRectangle(groundBrush, 0, groundY, Width, Height - groundY);
@@ -374,74 +460,155 @@ namespace RhythmArmy.Standalone
                 g.DrawLine(linePen, 0, groundY, Width, groundY);
             }
 
-            // Render Friendly Army Units
-            int squadBaseX = 120 + (int)(battle.State.BannerX * 1.5f);
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+
+            float beatProgress = battle.Rhythm.BeatProgress(battle.ElapsedTime);
+
+            // 1. Render Friendly Army Units with High-Detail Moonlighter Pixel Sprites
             for (int i = 0; i < battle.State.Units.Count; i++)
             {
                 var u = battle.State.Units[i];
-                int ux = 120 + (int)(u.X * 1.5f);
-                int uy = groundY - 45;
+                int ux = 100 + (int)(u.X * 1.5f);
+
+                var uClass = u.Member != null ? u.Member.Class : UnitClass.Swordsman;
+                var uSpecies = u.Member != null ? u.Member.Subspecies : Subspecies.Normal;
+                var spec = PixelSpriteRegistry.GetSpec(uClass);
+                int spriteSize = spec.SpriteWidth;
+                int drawScale = (spriteSize >= 48) ? 2 : 2;
+                int drawW = spriteSize * drawScale;
+                int drawH = spriteSize * drawScale;
+
+                // Determine animation row based on live action
+                int row = 0;
+                int maxFrames = 4;
+                if (!u.IsAlive)
+                {
+                    row = 8; // Death
+                    maxFrames = 3;
+                }
+                else if (battle.State.IsAirborne)
+                {
+                    row = 6; // Jump
+                    maxFrames = 3;
+                }
+                else if (battle.State.IsCharged)
+                {
+                    row = 5; // Charge
+                    maxFrames = 3;
+                }
+                else if (battle.Rhythm.IsFever)
+                {
+                    row = 4; // Fever
+                    maxFrames = 4;
+                }
+                else if (battle.State.IsDefending)
+                {
+                    row = 3; // Defend
+                    maxFrames = 2;
+                }
+                else if (u.IsRushing || battle.State.Phase == BattlePhase.Engaged)
+                {
+                    row = 2; // Attack
+                    maxFrames = 4;
+                }
+                else if (battle.State.Phase == BattlePhase.Marching)
+                {
+                    row = 1; // March
+                    maxFrames = 4;
+                }
+
+                int frame = (int)(beatProgress * maxFrames) % maxFrames;
+                var sheet = GetUnitSpriteSheet(uClass, uSpecies);
+
+                var srcRect = new Rectangle(frame * spriteSize, row * spriteSize, spriteSize, spriteSize);
+                int destX = ux - drawW / 2;
+                int destY = groundY - drawH + 8;
 
                 // Fever aura under units
                 if (battle.Rhythm.IsFever && u.IsAlive)
                 {
                     using (var auraBrush = new SolidBrush(Color.FromArgb(90, 255, 220, 60)))
                     {
-                        g.FillEllipse(auraBrush, ux - 6, uy + 14, 36, 18);
+                        g.FillEllipse(auraBrush, ux - 18, groundY - 6, 36, 12);
                     }
                 }
 
-                Color unitColor = u.IsAlive ? (battle.Rhythm.IsFever ? Color.FromArgb(255, 235, 110) : Color.FromArgb(240, 220, 90)) : Color.Gray;
-                using (var brush = new SolidBrush(unitColor))
-                {
-                    g.FillEllipse(brush, ux, uy, 24, 34);
-                }
-                using (var pen = new Pen(Color.Black, 2))
-                {
-                    g.DrawEllipse(pen, ux, uy, 24, 34);
-                }
-
-                // Eyes
-                using (var whiteBrush = new SolidBrush(Color.White))
-                using (var blackBrush = new SolidBrush(Color.Black))
-                {
-                    g.FillEllipse(whiteBrush, ux + 12, uy + 6, 8, 8);
-                    g.FillEllipse(blackBrush, ux + 15, uy + 8, 4, 4);
-                }
+                g.DrawImage(sheet, new Rectangle(destX, destY, drawW, drawH), srcRect, GraphicsUnit.Pixel);
             }
 
-            // Render Enemies
+            // 2. Render Enemies & Colossal Bosses
             foreach (var enemy in battle.State.Enemies)
             {
                 if (!enemy.IsAlive) continue;
-                int ex = 120 + (int)(enemy.X * 1.5f);
-                int ey = groundY - 55;
+                int ex = 100 + (int)(enemy.X * 1.5f);
 
-                using (var brush = new SolidBrush(Color.FromArgb(210, 50, 45)))
+                int spriteSize = 32;
+                if (enemy.Kind == EnemyKind.IronBehemoth || enemy.Kind == EnemyKind.DrakeTitan || enemy.Kind == EnemyKind.ColossusGolem) spriteSize = 96;
+                else if (enemy.Kind == EnemyKind.WildBoar || enemy.Kind == EnemyKind.GiantBoar || enemy.Kind == EnemyKind.Stag || enemy.Kind == EnemyKind.StoneWall || enemy.Kind == EnemyKind.Watchtower || enemy.Kind == EnemyKind.CatapultTower) spriteSize = 64;
+                else if (enemy.Kind == EnemyKind.TribeCavalry || enemy.Kind == EnemyKind.TribeHammerer || enemy.Kind == EnemyKind.TribeSkyrider) spriteSize = 48;
+
+                int drawScale = 2;
+                int drawW = spriteSize * drawScale;
+                int drawH = spriteSize * drawScale;
+
+                EnemyCombatState aiState = null;
+                battle.EnemyAIStates.TryGetValue(enemy.Id, out aiState);
+
+                int row = 0;
+                int maxFrames = 4;
+                if (!enemy.IsAlive)
                 {
-                    g.FillRectangle(brush, ex, ey, 38, 45);
+                    row = 5;
+                    maxFrames = 2;
                 }
-                using (var pen = new Pen(Color.Black, 2))
+                else if (aiState != null && (aiState.ActiveTelegraph != null || aiState.State == EnemyState.Telegraphing))
                 {
-                    g.DrawRectangle(pen, ex, ey, 38, 45);
+                    row = 3;
+                    maxFrames = 4;
+                }
+                else if (aiState != null && aiState.State == EnemyState.Attacking)
+                {
+                    row = 2;
+                    maxFrames = 3;
+                }
+                else if (aiState != null && aiState.State == EnemyState.Approaching)
+                {
+                    row = 1;
+                    maxFrames = 4;
                 }
 
-                // Health bar
+                int frame = (int)(beatProgress * maxFrames) % maxFrames;
+                var sheet = GetEnemySpriteSheet(enemy.Kind);
+
+                var srcRect = new Rectangle(frame * spriteSize, row * spriteSize, spriteSize, spriteSize);
+                int destX = ex - drawW / 2;
+                int destY = groundY - drawH + 8;
+
+                g.DrawImage(sheet, new Rectangle(destX, destY, drawW, drawH), srcRect, GraphicsUnit.Pixel);
+
+                // Health Bar
                 float hpPct = (float)enemy.CurrentHp / Math.Max(1, enemy.MaxHp);
-                using (var bgBrush = new SolidBrush(Color.Black))
-                using (var hpBrush = new SolidBrush(Color.LimeGreen))
+                int barW = Math.Max(40, drawW / 2);
+                int barX = ex - barW / 2;
+                int barY = destY - 14;
+
+                using (var bgBrush = new SolidBrush(Color.FromArgb(200, 15, 15, 20)))
+                using (var hpBrush = new SolidBrush(Color.FromArgb(255, 60, 200, 80)))
+                using (var barBorderPen = new Pen(Color.FromArgb(80, 80, 100), 1))
                 {
-                    g.FillRectangle(bgBrush, ex, ey - 12, 38, 6);
-                    g.FillRectangle(hpBrush, ex, ey - 12, (int)(38 * hpPct), 6);
+                    g.FillRectangle(bgBrush, barX, barY, barW, 6);
+                    g.FillRectangle(hpBrush, barX + 1, barY + 1, (int)((barW - 2) * hpPct), 4);
+                    g.DrawRectangle(barBorderPen, barX, barY, barW, 6);
                 }
             }
 
-            // Render Floating Combat Numbers
+            // 3. Render Floating Combat Numbers
             if (battle.FloatingTexts != null)
             {
                 foreach (var ft in battle.FloatingTexts)
                 {
-                    int fx = 120 + (int)(ft.X * 1.5f);
+                    int fx = 100 + (int)(ft.X * 1.5f);
                     int fy = groundY + (int)ft.Y;
                     Color textColor = Color.White;
                     Font textFont = null;
@@ -478,7 +645,7 @@ namespace RhythmArmy.Standalone
                 }
             }
 
-            // Rhythm HUD Overlay (Top-Left)
+            // 4. Rhythm HUD Overlay (Top-Left)
             using (var hudBrush = new SolidBrush(Color.FromArgb(225, 15, 20, 30)))
             {
                 g.FillRectangle(hudBrush, 30, 65, 360, 125);
@@ -488,159 +655,161 @@ namespace RhythmArmy.Standalone
                 g.DrawRectangle(pen, 30, 65, 360, 125);
             }
 
-            using (var font = new Font("Segoe UI", 12, FontStyle.Bold))
-            using (var brush = new SolidBrush(battle.Rhythm.IsFever ? Color.FromArgb(255, 225, 90) : Color.White))
+            using (var font = new Font("Segoe UI", 14, FontStyle.Bold))
+            using (var brush = new SolidBrush(battle.Rhythm.IsFever ? Color.FromArgb(255, 220, 60) : Color.White))
             {
-                string comboStr = string.Format("COMBO: {0}  |  {1}", battle.Rhythm.Combo, battle.Rhythm.IsFever ? "⚡ FEVER MODE ⚡" : "Command Ready");
+                string comboStr = battle.Rhythm.IsFever ? string.Format("FEVER! (Combo: {0})", battle.Rhythm.Combo) : string.Format("Combo: {0}", battle.Rhythm.Combo);
                 g.DrawString(comboStr, font, brush, 45, 75);
             }
 
-            using (var font = new Font("Segoe UI", 10, FontStyle.Regular))
-            using (var brush = new SolidBrush(Color.FromArgb(240, 215, 120)))
+            using (var font = new Font("Segoe UI", 11, FontStyle.Regular))
+            using (var brush = new SolidBrush(Color.FromArgb(200, 220, 255)))
             {
-                string chantStr = string.Format("Active Chant: {0}", _runtime.Orchestrator.BattleHUD.ActiveCommandChant ?? "---");
+                string chantStr = (hud != null && !string.IsNullOrEmpty(hud.ActiveCommandChant)) ? hud.ActiveCommandChant : "Listen for the beat...";
                 g.DrawString(chantStr, font, brush, 45, 100);
             }
 
-            // Visual Metronome Progress Bar with Pendulum
+            // Visual Metronome Progress Bar
             int metroX = 45;
-            int metroY = 125;
+            int metroY = 130;
             int metroW = 330;
-            int metroH = 12;
-            using (var bgBrush = new SolidBrush(Color.FromArgb(40, 48, 65)))
+            int metroH = 14;
+
+            using (var bgBrush = new SolidBrush(Color.FromArgb(30, 40, 55)))
             {
                 g.FillRectangle(bgBrush, metroX, metroY, metroW, metroH);
             }
-            // Beat tick marks (4 beats in measure)
-            using (var markPen = new Pen(Color.FromArgb(100, 120, 160), 2))
+            using (var markPen = new Pen(Color.FromArgb(70, 90, 120), 1))
             {
                 for (int b = 0; b <= 4; b++)
                 {
-                    int bx = metroX + (int)(metroW * (b / 4.0f));
+                    int bx = metroX + (b * metroW) / 4;
                     g.DrawLine(markPen, bx, metroY - 2, bx, metroY + metroH + 2);
                 }
             }
-            // Moving Metronome Ball
-            if (hud != null)
+
+            // Moving Metronome Marker
+            int markerX = metroX + (int)(beatProgress * metroW);
+            using (var ballBrush = new SolidBrush(battle.Rhythm.IsFever ? Color.FromArgb(255, 235, 60) : Color.FromArgb(0, 230, 255)))
             {
-                int ballX = metroX + (int)(metroW * ((hud.CurrentBeatIndex + hud.BeatProgress) / 4.0f));
-                ballX = Math.Max(metroX, Math.Min(metroX + metroW, ballX));
-                using (var ballBrush = new SolidBrush(battle.Rhythm.IsFever ? Color.FromArgb(255, 220, 0) : Color.FromArgb(100, 220, 255)))
-                {
-                    g.FillEllipse(ballBrush, ballX - 6, metroY - 3, 12, 18);
-                }
+                g.FillEllipse(ballBrush, markerX - 6, metroY - 2, 12, 18);
             }
 
-            using (var font = new Font("Segoe UI", 9, FontStyle.Italic))
-            using (var brush = new SolidBrush(Color.FromArgb(170, 185, 210)))
+            using (var font = new Font("Segoe UI", 9, FontStyle.Regular))
+            using (var brush = new SolidBrush(Color.FromArgb(170, 180, 200)))
             {
-                string beatStr = string.Format("Beat: {0}/4  |  Phase: {1}", battle.Rhythm.CurrentBeatInMeasure + 1, battle.Rhythm.Phase);
+                string beatStr = string.Format("Beat: {0}/4  |  Window: {1}", battle.Rhythm.CurrentBeatInMeasure + 1, battle.Rhythm.Phase);
                 g.DrawString(beatStr, font, brush, 45, 155);
             }
 
-            // Drum Command Cheat Sheet Overlay (Top-Right)
+            // 5. On-Screen Drum Command Cheat Sheet (Top-Right)
             int sheetW = 280;
-            int sheetH = 145;
+            int sheetH = 155;
             int sheetX = Width - sheetW - 30;
             int sheetY = 65;
 
-            using (var sheetBrush = new SolidBrush(Color.FromArgb(215, 18, 22, 32)))
+            using (var sheetBrush = new SolidBrush(Color.FromArgb(215, 15, 20, 30)))
             {
                 g.FillRectangle(sheetBrush, sheetX, sheetY, sheetW, sheetH);
             }
-            using (var sheetPen = new Pen(Color.FromArgb(80, 110, 160), 1))
+            using (var sheetPen = new Pen(Color.FromArgb(80, 110, 150), 1))
             {
                 g.DrawRectangle(sheetPen, sheetX, sheetY, sheetW, sheetH);
             }
 
-            using (var font = new Font("Segoe UI", 9, FontStyle.Bold))
-            using (var brush = new SolidBrush(Color.FromArgb(240, 215, 120)))
+            using (var font = new Font("Segoe UI", 10, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.FromArgb(255, 220, 120)))
             {
                 g.DrawString("DRUM COMMAND CHEAT SHEET", font, brush, sheetX + 15, sheetY + 8);
             }
 
-            using (var font = new Font("Segoe UI", 8, FontStyle.Regular))
-            using (var brush = new SolidBrush(Color.FromArgb(210, 220, 235)))
+            using (var font = new Font("Segoe UI", 8.5f, FontStyle.Regular))
+            using (var brush = new SolidBrush(Color.FromArgb(210, 220, 240)))
             {
-                int cy = sheetY + 28;
+                int cy = sheetY + 30;
                 g.DrawString("March:   [A-A-A-S]   BOOM BOOM BOOM TAK", font, brush, sheetX + 15, cy);
                 g.DrawString("Attack:  [S-S-A-S]   TAK TAK BOOM TAK", font, brush, sheetX + 15, cy + 18);
                 g.DrawString("Defend:  [D-D-A-S]   RAT RAT BOOM TAK", font, brush, sheetX + 15, cy + 36);
                 g.DrawString("Retreat: [S-A-S-A]   TAK BOOM TAK BOOM", font, brush, sheetX + 15, cy + 54);
                 g.DrawString("Charge:  [S-S-D-D]   TAK TAK RAT RAT (2.5x)", font, brush, sheetX + 15, cy + 72);
                 g.DrawString("Jump:    [F-F-A-S]   TING TING BOOM TAK", font, brush, sheetX + 15, cy + 90);
+                g.DrawString("Miracle: [F-F-F-S]   TING TING TING TAK", font, brush, sheetX + 15, cy + 108);
             }
         }
 
         private void RenderDialogue(Graphics g)
         {
-            RenderCampHub(g);
+            var dialogue = _runtime.Orchestrator.Dialogue;
 
-            // Semi-transparent backdrop overlay
-            using (var brush = new SolidBrush(Color.FromArgb(160, 0, 0, 0)))
+            // Dim Background
+            using (var brush = new SolidBrush(Color.FromArgb(220, 10, 12, 18)))
             {
-                g.FillRectangle(brush, 0, 0, Width, Height);
+                g.FillRectangle(brush, 0, 50, Width, Height - 50);
             }
 
             // Dialogue Box
-            int boxH = 140;
+            int boxH = 160;
             int boxY = Height - boxH - 60;
-            using (var brush = new SolidBrush(Color.FromArgb(240, 245, 240, 230)))
+            using (var brush = new SolidBrush(Color.FromArgb(235, 25, 32, 45)))
             {
                 g.FillRectangle(brush, 50, boxY, Width - 100, boxH);
             }
-            using (var pen = new Pen(Color.FromArgb(120, 80, 40), 3))
+            using (var pen = new Pen(Color.FromArgb(200, 160, 80), 2))
             {
                 g.DrawRectangle(pen, 50, boxY, Width - 100, boxH);
             }
 
-            var dialogue = _runtime.Orchestrator.Dialogue;
-            using (var font = new Font("Segoe UI", 12, FontStyle.Bold))
-            using (var brush = new SolidBrush(Color.FromArgb(100, 40, 20)))
+            // Speaker Name
+            using (var font = new Font("Segoe UI", 13, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.FromArgb(255, 215, 100)))
             {
-                g.DrawString(dialogue.CurrentLine != null ? dialogue.CurrentLine.Speaker : "High Priestess Leah", font, brush, 70, boxY + 15);
+                g.DrawString(dialogue.CurrentLine != null ? dialogue.CurrentLine.Speaker : "High Priestess Leah", font, brush, 70, boxY + 18);
             }
 
+            // Dialogue Text
             using (var font = new Font("Segoe UI", 11, FontStyle.Regular))
-            using (var brush = new SolidBrush(Color.FromArgb(30, 30, 30)))
+            using (var brush = new SolidBrush(Color.White))
             {
-                g.DrawString(dialogue.VisibleText ?? (dialogue.CurrentLine != null ? dialogue.CurrentLine.Text : "..."), font, brush, new RectangleF(70, boxY + 45, Width - 140, 60));
+                g.DrawString(dialogue.VisibleText ?? (dialogue.CurrentLine != null ? dialogue.CurrentLine.Text : "..."), font, brush, new RectangleF(70, boxY + 48, Width - 140, boxH - 70));
             }
 
+            // Prompt
             using (var font = new Font("Segoe UI", 9, FontStyle.Italic))
-            using (var brush = new SolidBrush(Color.FromArgb(120, 120, 120)))
+            using (var brush = new SolidBrush(Color.FromArgb(180, 190, 210)))
             {
                 g.DrawString("[Press Space / Enter to continue]", font, brush, Width - 280, boxY + boxH - 25);
             }
         }
 
-        private void RenderSummary(Graphics g, bool isVictory)
+        private void RenderSummary(Graphics g, bool victory)
         {
-            using (var brush = new SolidBrush(Color.FromArgb(200, 10, 15, 25)))
+            using (var brush = new SolidBrush(Color.FromArgb(230, 12, 16, 24)))
             {
-                g.FillRectangle(brush, 0, 0, Width, Height);
+                g.FillRectangle(brush, 0, 50, Width, Height - 50);
             }
 
-            using (var font = new Font("Segoe UI", 26, FontStyle.Bold))
-            using (var brush = new SolidBrush(isVictory ? Color.FromArgb(255, 215, 0) : Color.FromArgb(220, 50, 50)))
+            string title = victory ? "MISSION ACCOMPLISHED!" : "TACTICAL RETREAT...";
+            Color titleColor = victory ? Color.FromArgb(255, 215, 60) : Color.FromArgb(220, 70, 60);
+
+            using (var font = new Font("Segoe UI", 24, FontStyle.Bold))
+            using (var brush = new SolidBrush(titleColor))
             {
-                string title = isVictory ? "VICTORY ACHIEVED!" : "SQUAD DEFEATED";
                 var sz = g.MeasureString(title, font);
                 g.DrawString(title, font, brush, (Width - sz.Width) / 2, 160);
             }
 
-            using (var font = new Font("Segoe UI", 14, FontStyle.Regular))
-            using (var brush = new SolidBrush(Color.White))
+            string subtitle = victory ? "The Almighty Army returns triumphant to Camp with spoils of war." : "Regroup and forge stronger weapons at Vulcan's Blacksmith.";
+            using (var font = new Font("Segoe UI", 12, FontStyle.Regular))
+            using (var brush = new SolidBrush(Color.FromArgb(200, 210, 230)))
             {
-                string subtitle = isVictory ? "The expedition was successful! Spoils collected." : "Regroup at Camp and upgrade squad equipment.";
                 var sz = g.MeasureString(subtitle, font);
                 g.DrawString(subtitle, font, brush, (Width - sz.Width) / 2, 240);
             }
 
-            using (var font = new Font("Segoe UI", 11, FontStyle.Italic))
-            using (var brush = new SolidBrush(Color.FromArgb(180, 200, 230)))
+            string pressKey = "[Press Space / Enter to return to Camp Hub]";
+            using (var font = new Font("Segoe UI", 11, FontStyle.Bold))
+            using (var brush = new SolidBrush(Color.FromArgb(255, 220, 130)))
             {
-                string pressKey = "[Press Space or Enter to Return to Camp]";
                 var sz = g.MeasureString(pressKey, font);
                 g.DrawString(pressKey, font, brush, (Width - sz.Width) / 2, 340);
             }
@@ -649,10 +818,10 @@ namespace RhythmArmy.Standalone
         [STAThread]
         public static void Main(string[] args)
         {
-            if (args != null && args.Length > 0 && args[0].Equals("--test", StringComparison.OrdinalIgnoreCase))
+            if (args != null && args.Length > 0 && args[0] == "--test")
             {
-                // Run automated test suite
-                Tests.TestRunner.Main(args);
+                int code = RhythmArmy.Tests.TestRunner.Main(args);
+                Environment.Exit(code);
                 return;
             }
 

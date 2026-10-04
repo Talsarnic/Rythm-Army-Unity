@@ -41,6 +41,7 @@ namespace RhythmArmy.Visuals
         // Telegraph & Boss Warning Visuals
         public bool IsTelegraphing { get; private set; }
         public BossAttackType CurrentTelegraph { get; private set; }
+        public string NormalTelegraphName { get; private set; }
         public float TelegraphProgress { get; private set; } // 0.0 to 1.0
         public float TelegraphDuration { get; private set; }
         public float TelegraphTimer { get; private set; }
@@ -100,7 +101,19 @@ namespace RhythmArmy.Visuals
         public void StartTelegraph(BossAttackType telegraphType, float duration)
         {
             IsTelegraphing = true;
+            NormalTelegraphName = null;
             CurrentTelegraph = telegraphType;
+            TelegraphDuration = duration > 0f ? duration : 1.0f;
+            TelegraphTimer = 0f;
+            TelegraphProgress = 0f;
+            CurrentState = EnemyVisualState.Telegraphing;
+            Animator.Play("Idle");
+        }
+
+        public void StartNormalTelegraph(string attackName, float duration)
+        {
+            IsTelegraphing = true;
+            NormalTelegraphName = attackName;
             TelegraphDuration = duration > 0f ? duration : 1.0f;
             TelegraphTimer = 0f;
             TelegraphProgress = 0f;
@@ -111,6 +124,7 @@ namespace RhythmArmy.Visuals
         public void ClearTelegraph()
         {
             IsTelegraphing = false;
+            NormalTelegraphName = null;
             TelegraphProgress = 0f;
             TelegraphTimer = 0f;
             if (CurrentState == EnemyVisualState.Telegraphing)

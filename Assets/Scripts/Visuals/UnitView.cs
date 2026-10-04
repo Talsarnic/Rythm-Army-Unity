@@ -89,7 +89,7 @@ namespace RhythmArmy.Visuals
                 case UnitVisualState.Marching: Animator.Play("March"); break;
                 case UnitVisualState.Attacking: Animator.Play("Attack"); break;
                 case UnitVisualState.Defending: Animator.Play("Defend"); break;
-                case UnitVisualState.Charging: Animator.Play("March"); break;
+                case UnitVisualState.Charging: Animator.Play("Charge", true); break;
                 case UnitVisualState.Jumping: Animator.Play("Jump"); break;
                 case UnitVisualState.Hurt:
                     Animator.Play("Hurt");

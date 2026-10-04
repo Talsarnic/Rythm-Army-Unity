@@ -2,6 +2,9 @@
 
 A faithful rhythm-strategy battle game inspired by Patapon, completely rebuilt in C# for Unity with a visual art direction inspired by Moonlighter.
 
+> **Art production tracking:** See [ASSET_PRODUCTION_TODO.md](ASSET_PRODUCTION_TODO.md) for the living checklist of created, prototype, and remaining production assets. The tracker also includes the new beat-synchronized combat animation requirements.
+
+
 ---
 
 ## 🎮 Core Architecture & Systems

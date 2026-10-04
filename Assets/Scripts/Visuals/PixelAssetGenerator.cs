@@ -1007,7 +1007,7 @@ namespace RhythmArmy.Visuals
                     int ry = (int)(17 * scale) + anchorY;
                     if (spec.Silhouette == "water_charm")
                     {
-                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.FillCircle(rx, ry, S(3), cyan);
                         buffer.SetPixel(rx, ry - S(1), PixelColor32.White);
                     }
                     else if (spec.Silhouette == "wind_talisman")
@@ -1022,7 +1022,7 @@ namespace RhythmArmy.Visuals
                     }
                     else
                     {
-                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.FillCircle(rx, ry, S(3), cyan);
                         buffer.DrawCircle(rx, ry, S(4), cyan, false);
                         buffer.SetPixel(rx, ry, PixelColor32.White);
                     }

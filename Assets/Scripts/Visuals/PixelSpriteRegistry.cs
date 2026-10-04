@@ -25,8 +25,9 @@ namespace RhythmArmy.Visuals
         public Vector2Int ShieldAnchor;
         public Vector2Int HelmetAnchor;
         public string TextureAtlasId;
+        public string TextureAssetPath;
 
-        public UnitSpriteSpec(UnitClass unitClass, int width, int height, Vector2Int weaponAnchor, Vector2Int shieldAnchor, Vector2Int helmetAnchor, string textureAtlasId)
+        public UnitSpriteSpec(UnitClass unitClass, int width, int height, Vector2Int weaponAnchor, Vector2Int shieldAnchor, Vector2Int helmetAnchor, string textureAtlasId, string textureAssetPath = null)
         {
             Class = unitClass;
             SpriteWidth = width;
@@ -35,6 +36,7 @@ namespace RhythmArmy.Visuals
             ShieldAnchor = shieldAnchor;
             HelmetAnchor = helmetAnchor;
             TextureAtlasId = textureAtlasId;
+            TextureAssetPath = textureAssetPath;
         }
     }
 
@@ -60,7 +62,7 @@ namespace RhythmArmy.Visuals
             },
             {
                 UnitClass.Spearman,
-                new UnitSpriteSpec(UnitClass.Spearman, 32, 32, new Vector2Int(20, 16), new Vector2Int(8, 12), new Vector2Int(16, 26), "atlas_units_spearman")
+                new UnitSpriteSpec(UnitClass.Spearman, 32, 32, new Vector2Int(20, 16), new Vector2Int(8, 12), new Vector2Int(16, 26), "atlas_units_spearman", "Assets/Art/Units/Spearman/atlas_units_spearman.png")
             },
             {
                 UnitClass.Swordsman,

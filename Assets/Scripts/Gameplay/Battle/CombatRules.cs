@@ -236,47 +236,52 @@ namespace RhythmArmy.Gameplay.Battle
             if (aliveEnemies.Count == 0) return;
 
             bool wasCharged = state.IsCharged;
-            state.IsCharged = false; // Charge consumed on attack
+            state.IsCharged = false; // Charge is consumed by the attack phrase.
 
             foreach (var unit in state.Units.Where(u => u.IsAlive))
             {
                 float range = FormationSystem.GetEngagementRange(unit.Member.Class);
                 var weapon = ItemDef.Get(unit.Member.WeaponId);
 
-                // Find enemy in range
                 var target = aliveEnemies
-                    .Where(e => e.IsAlive && Math.Abs(e.X - unit.X) <= range + 30f)
+                    .Where(e => e.IsAlive && e.X >= unit.X - 25f && Math.Abs(e.X - unit.X) <= range + 30f)
                     .OrderBy(e => Math.Abs(e.X - unit.X))
                     .FirstOrDefault();
 
-                if (target != null)
+                if (target == null) continue;
+
+                bool melee = range <= 120f;
+                if (melee)
                 {
-                    var hit = CombatFormulas.CalculateDamage(
-                        unit.Member,
-                        weapon,
-                        target.Defense,
-                        target.IsStructure,
-                        false,
-                        state.FeverActive,
-                        rng,
-                        state.ActiveMealBuff
-                    );
+                    // Patapon-style attack motion: frontline units surge into
+                    // engagement distance instead of standing on formation slots.
+                    float strikeX = target.X - Math.Max(18f, target.CollisionRadius + 12f);
+                    float lunge = wasCharged ? 95f : 48f;
+                    unit.X = Math.Max(unit.X, Math.Min(strikeX, unit.X + lunge));
+                    unit.IsRushing = wasCharged;
+                }
 
-                    float damage = hit.FinalDamage;
-                    if (wasCharged)
-                    {
-                        damage *= 2.5f; // Charge attack boost
-                    }
+                var hit = CombatFormulas.CalculateDamage(
+                    unit.Member,
+                    weapon,
+                    target.Defense,
+                    target.IsStructure,
+                    false,
+                    state.FeverActive,
+                    rng,
+                    state.ActiveMealBuff
+                );
 
-                    target.CurrentHp = Math.Max(0f, target.CurrentHp - damage);
+                float damage = hit.FinalDamage;
+                if (wasCharged) damage *= 2.5f;
 
-                    // Check if killed by this hit to roll loot drops & currency
-                    if (!target.IsAlive)
-                    {
-                        var drops = LootSystem.RollDrops(target.Kind, rng);
-                        state.LootCollected.AddRange(drops);
-                        state.CurrencyCollected += LootSystem.RollCurrencyDrop(target.Kind, rng);
-                    }
+                target.CurrentHp = Math.Max(0f, target.CurrentHp - damage);
+
+                if (!target.IsAlive)
+                {
+                    var drops = LootSystem.RollDrops(target.Kind, rng);
+                    state.LootCollected.AddRange(drops);
+                    state.CurrencyCollected += LootSystem.RollCurrencyDrop(target.Kind, rng);
                 }
             }
         }
@@ -284,25 +289,56 @@ namespace RhythmArmy.Gameplay.Battle
         private static void ExecuteDefend(BattleState state)
         {
             state.IsDefending = true;
+            state.IsCharged = false;
+
+            // Defend pulls the army back into its formation instead of freezing
+            // every unit at whatever attack position it previously occupied.
+            foreach (var unit in state.Units.Where(u => u.IsAlive))
+            {
+                unit.IsRushing = false;
+                unit.X = state.BannerX + unit.FormationOffsetX;
+                unit.Y = unit.FormationOffsetY;
+            }
         }
 
         private static void ExecuteRetreat(BattleState state)
         {
             state.BannerX = Math.Max(50f, state.BannerX - RetreatStepDistance);
-            foreach (var unit in state.Units)
+            foreach (var unit in state.Units.Where(u => u.IsAlive))
             {
+                unit.IsRushing = false;
                 unit.X = state.BannerX + unit.FormationOffsetX;
+                unit.Y = unit.FormationOffsetY;
             }
+            state.IsCharged = false;
         }
 
         private static void ExecuteCharge(BattleState state)
         {
             state.IsCharged = true;
+
+            // Charge is a movement command first. The following attack converts
+            // this forward momentum into bonus damage.
+            foreach (var unit in state.Units.Where(u => u.IsAlive))
+            {
+                float distance = unit.Member.Class == UnitClass.Cavalry ||
+                                 unit.Member.Class == UnitClass.Skyrider ? 145f : 85f;
+                unit.X += distance;
+                unit.IsRushing = true;
+            }
+
+            state.BannerX += 45f;
         }
 
         private static void ExecuteJump(BattleState state)
         {
             state.IsAirborne = true;
+            foreach (var unit in state.Units.Where(u => u.IsAlive))
+            {
+                unit.IsRushing = false;
+                unit.X += 18f;
+                unit.Y = unit.FormationOffsetY + 42f;
+            }
         }
 
         public static void CheckBattleConditions(BattleState state)

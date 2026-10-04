@@ -92,6 +92,7 @@ namespace RhythmArmy.Gameplay.Battle
         public int AttackCooldown = 0;
         public int AttackWindupBeats = 0;
         public NormalEnemyAttackType PendingAttackType = NormalEnemyAttackType.Melee;
+        public float PendingAttackDamage = 0f;
         public string PendingAttackName = null;
         public float AlertDistance = 350f;
         public bool HasFled = false;
@@ -127,19 +128,19 @@ namespace RhythmArmy.Gameplay.Battle
             switch (ai.PendingAttackType)
             {
                 case NormalEnemyAttackType.RangedPhysical:
-                    ExecuteEnemyRangedAttack(state, ai.Enemy, 8f, DamageElement.Physical, rng);
+                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Physical, rng);
                     break;
                 case NormalEnemyAttackType.RangedFire:
-                    ExecuteEnemyRangedAttack(state, ai.Enemy, 12f, DamageElement.Fire, rng);
+                    ExecuteEnemyRangedAttack(state, ai.Enemy, ai.PendingAttackDamage, DamageElement.Fire, rng);
                     break;
                 case NormalEnemyAttackType.Sonic:
-                    ExecuteEnemySonicAttack(state, ai.Enemy, 7f, rng);
+                    ExecuteEnemySonicAttack(state, ai.Enemy, ai.PendingAttackDamage, rng);
                     break;
                 default:
                     float damage = ai.Enemy.Kind == EnemyKind.TribeHammerer ? 18f :
                                    ai.Enemy.Kind == EnemyKind.TribeBrawler ? 15f :
                                    ai.Enemy.Kind == EnemyKind.TribeSkyrider ? 14f : 12f;
-                    ExecuteEnemyMeleeAttack(state, ai.Enemy, damage, rng);
+                    ExecuteEnemyMeleeAttack(state, ai.Enemy, ai.PendingAttackDamage > 0f ? ai.PendingAttackDamage : damage, rng);
                     break;
             }
 
@@ -151,6 +152,7 @@ namespace RhythmArmy.Gameplay.Battle
         {
             ai.PendingAttackType = type;
             ai.PendingAttackName = name;
+            ai.PendingAttackDamage = 0f;
             ai.AttackWindupBeats = 1;
             ai.State = EnemyState.Telegraphing;
             state.PendingCombatFeedback.Add(
@@ -273,6 +275,7 @@ namespace RhythmArmy.Gameplay.Battle
                 if (distToBanner <= 450f && distToBanner >= 100f)
                 {
                     BeginNormalAttackTelegraph(state, ai, NormalEnemyAttackType.RangedPhysical, "Arrow Volley");
+                    ai.PendingAttackDamage = 8f;
                 }
                 else if (distToBanner > 450f)
                 {
@@ -286,6 +289,7 @@ namespace RhythmArmy.Gameplay.Battle
                 if (distToBanner <= 400f && distToBanner >= 80f)
                 {
                     BeginNormalAttackTelegraph(state, ai, NormalEnemyAttackType.RangedFire, "Arcane Bolt");
+                    ai.PendingAttackDamage = 12f;
                 }
                 else if (distToBanner > 400f)
                 {
@@ -299,6 +303,7 @@ namespace RhythmArmy.Gameplay.Battle
                 if (distToBanner <= 180f)
                 {
                     BeginNormalAttackTelegraph(state, ai, NormalEnemyAttackType.Sonic, "Sonic Burst");
+                    ai.PendingAttackDamage = 7f;
                 }
                 else if (distToBanner > 180f && distToBanner <= ai.AlertDistance)
                 {
@@ -325,6 +330,7 @@ namespace RhythmArmy.Gameplay.Battle
                 {
                     BeginNormalAttackTelegraph(state, ai, NormalEnemyAttackType.Melee,
                         ai.Enemy.Kind == EnemyKind.TribeHammerer ? "Hammer Smash" : "Melee Strike");
+                    ai.PendingAttackDamage = attackDamage;
                 }
                 else if (distToBanner > attackReach && distToBanner <= ai.AlertDistance)
                 {
@@ -386,6 +392,7 @@ namespace RhythmArmy.Gameplay.Battle
                     BeginNormalAttackTelegraph(state, ai,
                         NormalEnemyAttackType.RangedPhysical,
                         ai.Enemy.Kind == EnemyKind.CatapultTower ? "Catapult Barrage" : "Tower Shot");
+                    ai.PendingAttackDamage = dmg;
                 }
             }
         }
@@ -444,6 +451,8 @@ namespace RhythmArmy.Gameplay.Battle
                     }
 
                     unit.CurrentHp = Math.Max(0f, unit.CurrentHp - finalDmg);
+                    state.PendingCombatFeedback.Add(
+                        CombatFeedbackEvent.EnemyAttackImpact(ai.Enemy, unit, finalDmg));
                 }
             }
         }

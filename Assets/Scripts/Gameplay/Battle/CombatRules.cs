@@ -77,6 +77,8 @@ namespace RhythmArmy.Gameplay.Battle
         public float FormationPressure = 0f;
         public float FormationIntegrity = 100f;
         public int FormationPressureTier = 0;
+        public TerrainProfile CurrentTerrain;
+        public TerrainType CurrentTerrainType = TerrainType.Ground;
         public List<CombatFeedbackEvent> PendingCombatFeedback = new List<CombatFeedbackEvent>();
     }
 
@@ -102,6 +104,8 @@ namespace RhythmArmy.Gameplay.Battle
             state.FormationPressure = 0f;
             state.FormationIntegrity = 100f;
             state.FormationPressureTier = 0;
+            state.CurrentTerrain = TerrainRules.GetProfile(mission, state.BannerX);
+            state.CurrentTerrainType = state.CurrentTerrain.Type;
             state.PendingCombatFeedback.Clear();
 
             // Group by class to calculate squad formation slots
@@ -173,6 +177,8 @@ namespace RhythmArmy.Gameplay.Battle
             rng = rng ?? new Random();
             state.TotalCommandsIssued++;
             state.FeverActive = fever;
+
+            UpdateTerrainState(state);
             state.IsAirborne = (command == CommandId.Jump);
             state.IsDefending = (command == CommandId.Defend);
 
@@ -213,6 +219,7 @@ namespace RhythmArmy.Gameplay.Battle
 
             ResolveFormationCollisions(state);
             UpdateFormationPressure(state, command);
+            ApplyTerrainHazards(state);
             CheckBattleConditions(state);
         }
 
@@ -238,7 +245,10 @@ namespace RhythmArmy.Gameplay.Battle
                 state.BannerX = targetX;
                 foreach (var unit in state.Units)
                 {
-                    unit.X = state.BannerX + unit.FormationOffsetX;
+                    float multiplier = TerrainRules.GetMovementMultiplier(
+                        TerrainRules.GetProfile(state.Mission, unit.X),
+                        unit.Member.Class);
+                    unit.X += delta * multiplier;
                 }
             }
 
@@ -280,6 +290,8 @@ namespace RhythmArmy.Gameplay.Battle
                     // engagement distance instead of standing on formation slots.
                     float strikeX = target.X - Math.Max(18f, target.CollisionRadius + 12f);
                     float lunge = wasCharged ? 95f : 48f;
+                    TerrainProfile terrain = TerrainRules.GetProfile(state.Mission, unit.X);
+                    lunge *= TerrainRules.GetMovementMultiplier(terrain, unit.Member.Class);
                     unit.X = Math.Max(unit.X, Math.Min(strikeX, unit.X + lunge));
                     unit.IsRushing = wasCharged;
                 }
@@ -296,7 +308,15 @@ namespace RhythmArmy.Gameplay.Battle
                 );
 
                 float damage = hit.FinalDamage;
-                if (wasCharged) damage *= 2.5f;
+                TerrainProfile attackTerrain = TerrainRules.GetProfile(state.Mission, unit.X);
+                if (TerrainRules.IsRanged(unit.Member.Class))
+                {
+                    damage *= TerrainRules.GetRangedDamageMultiplier(attackTerrain);
+                }
+                if (wasCharged)
+                {
+                    damage *= 2.5f * TerrainRules.GetChargeMultiplier(attackTerrain);
+                }
 
                 target.CurrentHp = Math.Max(0f, target.CurrentHp - damage);
 
@@ -388,6 +408,38 @@ namespace RhythmArmy.Gameplay.Battle
                 unit.IsRushing = false;
                 unit.X += 18f;
                 unit.Y = unit.FormationOffsetY + 42f;
+            }
+        }
+
+        private static void UpdateTerrainState(BattleState state)
+        {
+            TerrainProfile profile = TerrainRules.GetProfile(state.Mission, state.BannerX);
+            if (profile.Type != state.CurrentTerrainType)
+            {
+                state.CurrentTerrain = profile;
+                state.CurrentTerrainType = profile.Type;
+                state.PendingCombatFeedback.Add(
+                    CombatFeedbackEvent.TerrainChanged(profile));
+            }
+            else
+            {
+                state.CurrentTerrain = profile;
+            }
+        }
+
+        private static void ApplyTerrainHazards(BattleState state)
+        {
+            TerrainProfile profile = TerrainRules.GetProfile(state.Mission, state.BannerX);
+            state.CurrentTerrain = profile;
+
+            if (profile.HeatDamagePercent <= 0f) return;
+
+            foreach (var unit in state.Units.Where(u => u.IsAlive))
+            {
+                float damage = Math.Max(1f, unit.MaxHp * profile.HeatDamagePercent);
+                unit.CurrentHp = Math.Max(0f, unit.CurrentHp - damage);
+                state.PendingCombatFeedback.Add(
+                    CombatFeedbackEvent.UnitHurt(unit, damage));
             }
         }
 

@@ -34,8 +34,14 @@ Thumbs.db
 [Bb]uilds/
 [Mm]emoryCaptures/
 [Ll]ocalCache/
+[Uu]ser[Ss]ettings/
 .utmp/
 AssetStoreTools*
+
+# Tool artifacts
+.ai/
+.codex/
+*.log
 
 # Crashlytics
 crashlytics-build.properties

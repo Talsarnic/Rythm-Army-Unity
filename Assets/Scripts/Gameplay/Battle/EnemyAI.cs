@@ -490,50 +490,5 @@ namespace RhythmArmy.Gameplay.Battle
             }
         }
 
-        private static void ExecuteEnemyMeleeAttack(BattleState state, LiveEnemy enemy, float baseDmg, Random rng)
-        {
-            // Attacks frontline units (Swordsman, Brawler, Hammerer)
-            var target = state.Units.Where(u => u.IsAlive).OrderBy(u => Math.Abs(u.X - enemy.X)).FirstOrDefault();
-            if (target != null)
-            {
-                var shield = ItemDef.Get(target.Member.ShieldId);
-                float def = shield != null ? shield.Defense : 0f;
-                float finalDmg = Math.Max(1f, baseDmg - def);
-                target.CurrentHp = Math.Max(0f, target.CurrentHp - finalDmg);
-                state.PendingCombatFeedback.Add(
-                    CombatFeedbackEvent.EnemyAttackImpact(enemy, target, finalDmg));
-            }
-        }
-
-        private static void ExecuteEnemySonicAttack(BattleState state, LiveEnemy enemy, float baseDmg, Random rng)
-        {
-            // Sonic attack waves hit frontline units in range
-            foreach (var unit in state.Units.Where(u => u.IsAlive))
-            {
-                if (Math.Abs(unit.X - enemy.X) <= 150f)
-                {
-                    var shield = ItemDef.Get(unit.Member.ShieldId);
-                    float def = shield != null ? shield.Defense : 0f;
-                    float finalDmg = Math.Max(1f, baseDmg - def * 0.5f);
-                    unit.CurrentHp = Math.Max(0f, unit.CurrentHp - finalDmg);
-                    state.PendingCombatFeedback.Add(
-                        CombatFeedbackEvent.EnemyAttackImpact(enemy, unit, finalDmg));
-                }
-            }
-        }
-
-        private static void ExecuteEnemyRangedAttack(BattleState state, LiveEnemy enemy, float baseDmg, DamageElement element, Random rng)
-        {
-            var aliveUnits = state.Units.Where(u => u.IsAlive).ToList();
-            if (aliveUnits.Count == 0) return;
-
-            var target = aliveUnits[rng.Next(aliveUnits.Count)];
-            var helm = ItemDef.Get(target.Member.HelmetId);
-            float def = helm != null ? helm.Defense : 0f;
-            float finalDmg = Math.Max(1f, baseDmg - def);
-            target.CurrentHp = Math.Max(0f, target.CurrentHp - finalDmg);
-            state.PendingCombatFeedback.Add(
-                CombatFeedbackEvent.EnemyAttackImpact(enemy, target, finalDmg));
-        }
     }
 }

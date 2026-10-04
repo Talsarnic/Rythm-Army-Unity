@@ -64,6 +64,7 @@ namespace RhythmArmy.Gameplay.Battle
 
             BattleManager.OnCommandEvaluated += HandleCommandEvaluated;
             BattleManager.OnEnemySlain += HandleEnemySlain;
+            BattleManager.OnCombatFeedback += HandleCombatFeedback;
         }
 
         public void StartBattle(MissionDef mission, List<UnitMember> roster)
@@ -181,7 +182,11 @@ namespace RhythmArmy.Gameplay.Battle
                 EnemyCombatState aiState;
                 if (BattleManager.EnemyAIStates.TryGetValue(ev.LiveData.Id, out aiState))
                 {
-                    if (aiState.ActiveTelegraph != null && !ev.IsTelegraphing)
+                    if (aiState.AttackWindupBeats > 0 && !ev.IsTelegraphing)
+                    {
+                        ev.StartNormalTelegraph(aiState.PendingAttackName, 1.0f);
+                    }
+                    else if (aiState.ActiveTelegraph != null && !ev.IsTelegraphing)
                     {
                         ev.StartTelegraph(aiState.ActiveTelegraph.AttackType, aiState.ActiveTelegraph.WindupBeatsRemaining * 0.5f);
                     }
@@ -190,6 +195,99 @@ namespace RhythmArmy.Gameplay.Battle
                         ev.ClearTelegraph();
                     }
                 }
+            }
+        }
+
+        private void HandleCombatFeedback(CombatFeedbackEvent feedback)
+        {
+            if (feedback.Type == CombatFeedbackType.EnemyAttackTelegraph)
+            {
+                var enemyView = feedback.Enemy != null
+                    ? EnemyViews.FirstOrDefault(v => v.LiveData.Id == feedback.Enemy.Id)
+                    : null;
+                if (enemyView != null)
+                {
+                    enemyView.StartNormalTelegraph(feedback.AttackName, 1.0f);
+                }
+                return;
+            }
+
+            if (feedback.Type == CombatFeedbackType.EnemyHit ||
+                feedback.Type == CombatFeedbackType.EnemyKnockback)
+            {
+                var enemyView = feedback.Enemy != null
+                    ? EnemyViews.FirstOrDefault(v => v.LiveData.Id == feedback.Enemy.Id)
+                    : null;
+                if (enemyView != null && feedback.Type == CombatFeedbackType.EnemyHit)
+                {
+                    enemyView.TakeDamage(feedback.Damage);
+                }
+
+                if (feedback.Type == CombatFeedbackType.EnemyHit && feedback.Damage > 0f)
+                {
+                    SpawnDamageNumber(
+                        feedback.WorldX,
+                        feedback.WorldY - 18f,
+                        feedback.Damage,
+                        feedback.IsCritical);
+                    if (Camera != null)
+                    {
+                        Camera.AddTrauma(feedback.IsCritical ? 0.10f : 0.04f);
+                    }
+                }
+                return;
+            }
+
+            if (feedback.Type == CombatFeedbackType.EnemyAttackImpact)
+            {
+                var enemyView = feedback.Enemy != null
+                    ? EnemyViews.FirstOrDefault(v => v.LiveData.Id == feedback.Enemy.Id)
+                    : null;
+                var unitView = feedback.Unit != null
+                    ? UnitViews.FirstOrDefault(v => v.LiveData.Id == feedback.Unit.Member.Id)
+                    : null;
+
+                if (enemyView != null && enemyView.LiveData.IsAlive)
+                {
+                    enemyView.SetState(EnemyVisualState.Attacking);
+                }
+
+                if (unitView != null)
+                {
+                    unitView.TakeDamage(feedback.Damage);
+                    SpawnDamageNumber(
+                        feedback.WorldX,
+                        feedback.WorldY - 16f,
+                        feedback.Damage,
+                        false);
+                }
+
+                if (Camera != null)
+                {
+                    Camera.AddTrauma(0.08f);
+                }
+                return;
+            }
+
+            if (feedback.Type == CombatFeedbackType.FormationPressure)
+            {
+                if (feedback.Damage >= CombatRules.FormationPressureCriticalThreshold)
+                {
+                    AddFormationWarning();
+                }
+            }
+        }
+
+        private void AddFormationWarning()
+        {
+            SpawnDamageNumber(
+                BattleManager.State.BannerX,
+                -70f,
+                BattleManager.State.FormationPressure,
+                false);
+            if (Camera != null)
+            {
+                Camera.AddTrauma(0.05f);
             }
         }
 

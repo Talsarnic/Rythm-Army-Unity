@@ -71,6 +71,13 @@ namespace RhythmArmy.Gameplay.Battle
         public bool IsDefending = false;
         public ItemDef ActiveMealBuff = null;
         public string DefeatReason = null;
+
+        // Formation pressure is a persistent battlefield state. It rises when
+        // enemies compress the frontline and falls when the army regains space.
+        public float FormationPressure = 0f;
+        public float FormationIntegrity = 100f;
+        public int FormationPressureTier = 0;
+        public List<CombatFeedbackEvent> PendingCombatFeedback = new List<CombatFeedbackEvent>();
     }
 
     public static class CombatRules
@@ -78,6 +85,9 @@ namespace RhythmArmy.Gameplay.Battle
         public const float MarchStepDistance = 140f;
         public const float RetreatStepDistance = 180f;
         public const float MeleeStrikeDistance = 35f;
+        public const float FormationPressureStartDistance = 150f;
+        public const float FormationPressureCriticalThreshold = 80f;
+        public const float FormationCollisionDistance = 30f;
 
         public static void InitializeBattle(BattleState state, MissionDef mission, List<UnitMember> roster, ItemDef mealBuff = null)
         {
@@ -89,6 +99,10 @@ namespace RhythmArmy.Gameplay.Battle
             state.Enemies.Clear();
             state.CurrentWaveIndex = 0;
             state.ActiveMealBuff = mealBuff;
+            state.FormationPressure = 0f;
+            state.FormationIntegrity = 100f;
+            state.FormationPressureTier = 0;
+            state.PendingCombatFeedback.Clear();
 
             // Group by class to calculate squad formation slots
             var classGroups = roster.GroupBy(u => u.Class);
@@ -197,6 +211,8 @@ namespace RhythmArmy.Gameplay.Battle
                     break;
             }
 
+            ResolveFormationCollisions(state);
+            UpdateFormationPressure(state, command);
             CheckBattleConditions(state);
         }
 
@@ -284,6 +300,33 @@ namespace RhythmArmy.Gameplay.Battle
 
                 target.CurrentHp = Math.Max(0f, target.CurrentHp - damage);
 
+                // Knockback is a presentation-visible part of the hit, but it
+                // also affects spacing so the frontline does not visually stack.
+                if (!target.IsStructure)
+                {
+                    float direction = target.X >= unit.X ? 1f : -1f;
+                    float knockback = Math.Min(wasCharged ? 42f : 26f, hit.Knockback * (wasCharged ? 0.65f : 0.45f));
+                    target.X += direction * knockback;
+                    state.PendingCombatFeedback.Add(CombatFeedbackEvent.EnemyHit(
+                        target, damage, knockback, hit.IsCritical));
+                    if (knockback > 0.5f)
+                    {
+                        state.PendingCombatFeedback.Add(new CombatFeedbackEvent
+                        {
+                            Type = CombatFeedbackType.EnemyKnockback,
+                            Enemy = target,
+                            Knockback = knockback,
+                            WorldX = target.X,
+                            WorldY = target.Y
+                        });
+                    }
+                }
+                else
+                {
+                    state.PendingCombatFeedback.Add(CombatFeedbackEvent.EnemyHit(
+                        target, damage, 0f, hit.IsCritical));
+                }
+
                 if (!target.IsAlive)
                 {
                     var drops = LootSystem.RollDrops(target.Kind, rng);
@@ -345,6 +388,121 @@ namespace RhythmArmy.Gameplay.Battle
                 unit.IsRushing = false;
                 unit.X += 18f;
                 unit.Y = unit.FormationOffsetY + 42f;
+            }
+        }
+
+        private static void ResolveFormationCollisions(BattleState state)
+        {
+            var aliveUnits = state.Units.Where(u => u.IsAlive).ToList();
+            var aliveEnemies = state.Enemies.Where(e => e.IsAlive && !e.IsStructure).ToList();
+
+            foreach (var enemy in aliveEnemies)
+            {
+                foreach (var unit in aliveUnits)
+                {
+                    float distance = Math.Abs(enemy.X - unit.X);
+                    float minDistance = Math.Max(FormationCollisionDistance, enemy.CollisionRadius + 12f);
+                    if (distance >= minDistance) continue;
+
+                    float overlap = minDistance - distance;
+                    float direction = enemy.X >= unit.X ? 1f : -1f;
+
+                    // Most of the correction is applied to the army. This makes
+                    // a packed enemy line visibly push the vanguard backward.
+                    unit.X -= direction * overlap * 0.72f;
+                    enemy.X += direction * overlap * 0.28f;
+                }
+            }
+
+            // Keep the banner behind the frontline and prevent a collision
+            // correction from moving a unit into impossible negative space.
+            foreach (var unit in aliveUnits)
+            {
+                if (unit.Member.Class == UnitClass.Banner)
+                {
+                    unit.X = state.BannerX;
+                }
+                else
+                {
+                    unit.X = Math.Max(state.BannerX - 180f, unit.X);
+                }
+            }
+        }
+
+        private static void UpdateFormationPressure(BattleState state, CommandId command)
+        {
+            var aliveEnemies = state.Enemies.Where(e => e.IsAlive && !e.IsStructure).ToList();
+            var aliveUnits = state.Units.Where(u => u.IsAlive && u.Member.Class != UnitClass.Banner).ToList();
+
+            float pressureInput = 0f;
+            foreach (var enemy in aliveEnemies)
+            {
+                float frontDistance = enemy.X - state.BannerX;
+                if (frontDistance <= FormationPressureStartDistance && frontDistance >= -90f)
+                {
+                    float weight = 1f;
+                    var category = EnemyMetadata.GetCategory(enemy.Kind);
+                    if (category == EnemyCategory.Boss) weight = 3f;
+                    else if (enemy.Kind == EnemyKind.TribeHammerer ||
+                             enemy.Kind == EnemyKind.TribeCavalry ||
+                             enemy.Kind == EnemyKind.TribeSkyrider)
+                        weight = 1.5f;
+
+                    if (frontDistance < 35f) weight *= 1.35f;
+                    pressureInput += weight;
+                }
+
+                if (enemy.X < state.BannerX + 15f)
+                {
+                    pressureInput += 2f; // Enemy has breached the banner line.
+                }
+            }
+
+            foreach (var unit in aliveUnits)
+            {
+                int nearbyEnemies = aliveEnemies.Count(e => Math.Abs(e.X - unit.X) <= 75f);
+                if (nearbyEnemies > 1)
+                {
+                    pressureInput += (nearbyEnemies - 1) * 1.25f;
+                }
+            }
+
+            float response = pressureInput * 4.5f;
+            if (command == CommandId.Defend) response *= 0.55f;
+            else if (command == CommandId.Charge) response *= 0.80f;
+            else if (command == CommandId.Retreat) response *= 0.35f;
+            else if (command == CommandId.Attack) response *= 0.85f;
+
+            // Space regained by the player's command is a meaningful relief.
+            float recovery = command == CommandId.March ? 8f :
+                             command == CommandId.Defend ? 12f :
+                             command == CommandId.Retreat ? 18f : 5f;
+
+            state.FormationPressure = Math.Max(0f, Math.Min(100f,
+                state.FormationPressure + response - recovery));
+            state.FormationIntegrity = 100f - state.FormationPressure;
+
+            int tier = state.FormationPressure >= FormationPressureCriticalThreshold ? 3 :
+                       state.FormationPressure >= 55f ? 2 :
+                       state.FormationPressure >= 25f ? 1 : 0;
+
+            if (tier != state.FormationPressureTier)
+            {
+                state.FormationPressureTier = tier;
+                state.PendingCombatFeedback.Add(
+                    CombatFeedbackEvent.FormationPressure(
+                        state.FormationPressure, state.FormationIntegrity));
+            }
+
+            if (state.FormationPressure >= FormationPressureCriticalThreshold)
+            {
+                foreach (var unit in aliveUnits.Where(u => u.X > state.BannerX - 120f))
+                {
+                    float push = unit.Member.Class == UnitClass.Cavalry ||
+                                 unit.Member.Class == UnitClass.Skyrider ? 2.5f : 4f;
+                    unit.X = Math.Max(state.BannerX - 120f, unit.X - push);
+                    unit.IsRushing = false;
+                }
             }
         }
 

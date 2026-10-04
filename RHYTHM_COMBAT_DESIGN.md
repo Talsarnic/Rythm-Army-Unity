@@ -1,5 +1,21 @@
 # Rhythm Combat Design
 
+
+## Enemy Response and Formation Pressure
+
+Enemy attacks now use a readable response window instead of always resolving immediately:
+
+- Normal melee, ranged, sonic, and fortification attacks enter a one-command telegraph state before impact.
+- The telegraph is surfaced to presentation as an enemy warning state, then the attack impact emits a synchronized combat-feedback event.
+- Boss attacks retain their existing multi-beat telegraphs and command-specific counters.
+- Player attacks emit hit/knockback feedback at the damage-resolution moment.
+- Non-structure enemies receive directional knockback so repeated attacks visibly open space.
+- Frontline collision separation prevents enemy and unit sprites from occupying the same combat space.
+- Formation pressure is persistent from 0–100 and is converted to formation integrity (100 minus pressure).
+- Pressure rises when enemies compress the banner/frontline or surround units and is reduced by Defend, Retreat, March, and successful spacing.
+- At critical pressure, the vanguard is pushed toward the banner and rushing state is cancelled, creating a readable “the line is breaking” response.
+- Camera trauma and damage numbers respond to combat impacts; final production VFX can later replace these presentation hooks without changing the simulation contract.
+
 ## Core timing contract
 
 Campaign combat uses a continuous 4/4-style command phrase at the default 120 BPM.

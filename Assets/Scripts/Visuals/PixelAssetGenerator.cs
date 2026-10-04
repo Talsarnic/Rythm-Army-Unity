@@ -1200,12 +1200,12 @@ namespace RhythmArmy.Visuals
         {
             switch (species)
             {
-                case Subspecies.Swiftpaw: return PixelColor32.FromHex("#FFCC80"); // Sandy rabbit
-                case Subspecies.Frogtide: return PixelColor32.FromHex("#80CBC4"); // Amphibian cyan
-                case Subspecies.Ironwool: return PixelColor32.FromHex("#ECEFF1"); // Pure wool white
-                case Subspecies.Colossus: return PixelColor32.FromHex("#B0BEC5"); // Slate horn
-                case Subspecies.Apex: return PixelColor32.FromHex("#FFE082"); // Celestial gold
-                default: return PixelColor32.FromHex("#FFFFFF"); // Classic white
+                case Subspecies.Swiftpaw: return PixelColor32.FromHex("#D6A06B"); // Warm sandy fur/skin
+                case Subspecies.Frogtide: return PixelColor32.FromHex("#73AFA2"); // Muted amphibian teal
+                case Subspecies.Ironwool: return PixelColor32.FromHex("#D8D0C2"); // Warm wool
+                case Subspecies.Colossus: return PixelColor32.FromHex("#8D8177"); // Weathered stone skin
+                case Subspecies.Apex: return PixelColor32.FromHex("#D7A95E"); // Celestial gold
+                default: return PixelColor32.FromHex("#C98B68"); // Warm natural skin
             }
         }
 
@@ -1213,17 +1213,17 @@ namespace RhythmArmy.Visuals
         {
             switch (unitClass)
             {
-                case UnitClass.Banner: return PixelColor32.AmberGold;
-                case UnitClass.Spearman: return PixelColor32.Crimson;
-                case UnitClass.Swordsman: return PixelColor32.OceanicTeal;
-                case UnitClass.Archer: return PixelColor32.VerdantMoss;
-                case UnitClass.Cavalry: return PixelColor32.AmberGold;
-                case UnitClass.Hammerer: return PixelColor32.ObsidianSlate;
-                case UnitClass.Hornist: return PixelColor32.SpiritCyan;
-                case UnitClass.Skyrider: return PixelColor32.MithrilBlue;
-                case UnitClass.Mage: return PixelColor32.FromHex("#AB47BC");
-                case UnitClass.Brawler: return PixelColor32.FromHex("#E65100");
-                default: return PixelColor32.AmberGold;
+                case UnitClass.Banner: return PixelColor32.FromHex("#B98A4A");
+                case UnitClass.Spearman: return PixelColor32.FromHex("#A94A43");
+                case UnitClass.Swordsman: return PixelColor32.FromHex("#4F776F");
+                case UnitClass.Archer: return PixelColor32.FromHex("#68784D");
+                case UnitClass.Cavalry: return PixelColor32.FromHex("#B98A4A");
+                case UnitClass.Hammerer: return PixelColor32.FromHex("#59616A");
+                case UnitClass.Hornist: return PixelColor32.FromHex("#4D8D91");
+                case UnitClass.Skyrider: return PixelColor32.FromHex("#557E9B");
+                case UnitClass.Mage: return PixelColor32.FromHex("#74527D");
+                case UnitClass.Brawler: return PixelColor32.FromHex("#9B5A35");
+                default: return PixelColor32.FromHex("#B98A4A");
             }
         }
 

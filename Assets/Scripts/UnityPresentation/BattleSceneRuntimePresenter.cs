@@ -25,7 +25,7 @@ namespace RhythmArmy.UnityPresentation
         private BattleController _battle;
         private Camera _camera;
         private readonly Dictionary<string, RuntimeActor> _actors = new Dictionary<string, RuntimeActor>();
-        private readonly Dictionary<UnitClass, Texture2D> _unitTextures = new Dictionary<UnitClass, Texture2D>();
+        private readonly Dictionary<string, Texture2D> _unitTextures = new Dictionary<string, Texture2D>();
         private readonly Dictionary<string, Texture2D> _equipmentTextures = new Dictionary<string, Texture2D>();
         private readonly Dictionary<EnemyKind, Texture2D> _enemyTextures = new Dictionary<EnemyKind, Texture2D>();
         private readonly List<Texture2D> _ownedTextures = new List<Texture2D>();

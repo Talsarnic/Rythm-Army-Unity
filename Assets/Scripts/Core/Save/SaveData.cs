@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using RhythmArmy.Core.Data;
 
 namespace RhythmArmy.Core.Save
@@ -39,7 +40,7 @@ namespace RhythmArmy.Core.Save
         public float InputOffsetMs = 0f;
         public List<UnitMember> Roster = new List<UnitMember>();
         public List<InventoryEntry> Inventory = new List<InventoryEntry>();
-        public Dictionary<string, int> BossHuntLevels = new Dictionary<string, int>();
+        [SerializeField] public Dictionary<string, int> BossHuntLevels = new Dictionary<string, int>();
         public string ActiveMealBuffId = null;
         public AudioSettingsData Settings = new AudioSettingsData();
 

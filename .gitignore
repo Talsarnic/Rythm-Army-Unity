@@ -1,0 +1,41 @@
+# OS generated files
+[Dd]esktop.ini
+Thumbs.db
+.DS_Store
+
+# Build results
+[Bb]in/*
+![Bb]in/Debug/
+[Bb]in/Debug/*
+![Bb]in/Debug/RhythmArmy.exe
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / Rider cache & user settings
+.vs/
+.idea/
+*.suo
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Mm]emoryCaptures/
+[Ll]ocalCache/
+.utmp/
+AssetStoreTools*
+
+# Crashlytics
+crashlytics-build.properties

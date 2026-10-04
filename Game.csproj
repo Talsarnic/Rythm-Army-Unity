@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A837A3B4-8468-4573-B85E-5D3E836FE862}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <StartupObject>RhythmArmy.Standalone.StandaloneGameWindow</StartupObject>
+    <RootNamespace>RhythmArmy</RootNamespace>
+    <AssemblyName>RhythmArmy</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets\Scripts\Core\Audio\AudioController.cs" />
+    <Compile Include="Assets\Scripts\Core\Audio\GameSettings.cs" />
+    <Compile Include="Assets\Scripts\Core\Audio\RhythmAudioSequencer.cs" />
+    <Compile Include="Assets\Scripts\Core\Audio\RuntimeInputManager.cs" />
+    <Compile Include="Assets\Scripts\Core\Combat\FloatingCombatText.cs" />
+    <Compile Include="Assets\Scripts\Core\Rhythm\Drums.cs" />
+    <Compile Include="Assets\Scripts\Core\Rhythm\CommandDef.cs" />
+    <Compile Include="Assets\Scripts\Core\Rhythm\RhythmEngine.cs" />
+    <Compile Include="Assets\Scripts\Core\Data\UnitClass.cs" />
+    <Compile Include="Assets\Scripts\Core\Data\EnemyKind.cs" />
+    <Compile Include="Assets\Scripts\Core\Data\ItemDef.cs" />
+    <Compile Include="Assets\Scripts\Core\Data\MissionDef.cs" />
+    <Compile Include="Assets\Scripts\Core\Combat\FormationSystem.cs" />
+    <Compile Include="Assets\Scripts\Core\Combat\CombatFormulas.cs" />
+    <Compile Include="Assets\Scripts\Core\Combat\BallisticsCalculator.cs" />
+    <Compile Include="Assets\Scripts\Core\Save\SaveData.cs" />
+    <Compile Include="Assets\Scripts\Core\Save\MiniJson.cs" />
+    <Compile Include="Assets\Scripts\Core\Save\SaveSystem.cs" />
+    <Compile Include="Assets\Scripts\Core\Audio\DSPAudioClock.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\BattleController.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\BattleItemSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\BattleManager.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\BossHuntingSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\CombatRules.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\DungeonRuinsSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\EnemyAI.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\HeroSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\LootSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\MiracleSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\RhythmMonolithSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Battle\WeatherSimulationSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\AltarEvolution.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\EnchantingSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\FeatsSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\MaterTreeAwakening.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\BarracksManager.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\BlacksmithCrafting.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\CampController.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\CampMinigames.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\EquipmentOptimizer.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Camp\MerchantShopSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\GameRuntime.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\StandaloneGameWindow.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\Narrative\DialogueSystem.cs" />
+    <Compile Include="Assets\Scripts\Gameplay\GameOrchestrator.cs" />
+    <Compile Include="Assets\Scripts\UI\BattleHUDState.cs" />
+    <Compile Include="Assets\Scripts\UI\BattleUIController.cs" />
+    <Compile Include="Assets\Scripts\UI\CampHUDState.cs" />
+    <Compile Include="Assets\Scripts\UI\CampUIController.cs" />
+    <Compile Include="Assets\Scripts\UI\DialogueUIController.cs" />
+    <Compile Include="Assets\Scripts\Visuals\AssetCatalog.cs" />
+    <Compile Include="Assets\Scripts\Visuals\AssetDiskExporter.cs" />
+    <Compile Include="Assets\Scripts\Visuals\CampArtGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\EnemyView.cs" />
+    <Compile Include="Assets\Scripts\Visuals\EnvironmentArtGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\EnvironmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Visuals\EnvironmentView.cs" />
+    <Compile Include="Assets\Scripts\Visuals\MoonlighterLighting.cs" />
+    <Compile Include="Assets\Scripts\Visuals\NormalMapGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelAnimation.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelAssetGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelBitmapBuffer.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelCamera.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelPerfectSetup.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelSpriteRegistry.cs" />
+    <Compile Include="Assets\Scripts\Visuals\PixelVFXEmitter.cs" />
+    <Compile Include="Assets\Scripts\Visuals\ProceduralAudioGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\ProjectileView.cs" />
+    <Compile Include="Assets\Scripts\Visuals\ScenePrefabRegistry.cs" />
+    <Compile Include="Assets\Scripts\Visuals\SpriteAtlasBuilder.cs" />
+    <Compile Include="Assets\Scripts\Visuals\TilemapDefinition.cs" />
+    <Compile Include="Assets\Scripts\Visuals\TitleAndMapArtGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\UIArtGenerator.cs" />
+    <Compile Include="Assets\Scripts\Visuals\UnitySceneExporter.cs" />
+    <Compile Include="Assets\Scripts\Visuals\UnitView.cs" />
+    <Compile Include="Assets\Scripts\Visuals\VFXArtGenerator.cs" />
+    <Compile Include="Assets\Tests\TestRunner.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".gitignore" />
+    <Content Include="README.md" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

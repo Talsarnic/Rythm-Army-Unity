@@ -845,6 +845,155 @@ namespace RhythmArmy.Visuals
         /// <summary>
         /// Generates a 24x24 px pixel icon for weapons, armors, materials, or charms.
         /// </summary>
+        /// <summary>
+        /// Generates a transparent equipment overlay at the same frame size as the unit.
+        /// Equipment is intentionally authored as a separate silhouette layer so changing
+        /// gear changes the visible character rather than only changing combat stats.
+        /// </summary>
+        public static PixelBitmapBuffer GenerateEquipmentOverlay(string itemId, int size)
+        {
+            var buffer = new PixelBitmapBuffer(size, size);
+            var spec = EquipmentVisualRegistry.Get(itemId);
+            if (spec == null) return buffer;
+
+            float scale = size / 32f;
+            int cx = size / 2;
+            int anchorX = (int)(spec.AnchorOffset.X * scale);
+            int anchorY = (int)(spec.AnchorOffset.Y * scale);
+
+            PixelColor32 dark = PixelColor32.Black;
+            PixelColor32 steel = PixelColor32.SteelMid;
+            PixelColor32 steelLight = PixelColor32.SteelLight;
+            PixelColor32 wood = PixelColor32.WoodBrown;
+            PixelColor32 leather = PixelColor32.LeatherMid;
+            PixelColor32 gold = PixelColor32.GoldMid;
+            PixelColor32 crimson = PixelColor32.Crimson;
+            PixelColor32 cyan = PixelColor32.SpiritCyan;
+
+            int S(float value) { return Math.Max(1, (int)Math.Round(value * scale)); }
+            void Rect(int x, int y, int w, int h, PixelColor32 color)
+            {
+                buffer.FillRect((int)(x * scale) + anchorX, (int)(y * scale) + anchorY,
+                    S(w), S(h), color);
+            }
+
+            switch (spec.Family)
+            {
+                case "spear":
+                    int shaftX = (int)(21 * scale) + anchorX;
+                    int shaftY = (int)(21 * scale) + anchorY;
+                    int tipX = (int)(29 * scale) + anchorX;
+                    int tipY = (int)(8 * scale) + anchorY;
+                    buffer.DrawLine(shaftX, shaftY, tipX, tipY, spec.Material == "wood" ? wood : steel);
+                    if (spec.Silhouette == "forked_thunder")
+                    {
+                        buffer.DrawLine(tipX, tipY, tipX - S(2), tipY - S(4), cyan);
+                        buffer.DrawLine(tipX, tipY, tipX + S(2), tipY - S(4), cyan);
+                        buffer.SetPixel(tipX, tipY, PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "leaf_blade")
+                    {
+                        buffer.FillRect(tipX - S(1), tipY - S(3), S(3), S(5), steelLight);
+                        buffer.SetPixel(tipX, tipY - S(4), PixelColor32.White);
+                    }
+                    else
+                    {
+                        buffer.FillRect(tipX - S(1), tipY - S(2), S(3), S(3), steelLight);
+                    }
+                    break;
+
+                case "shield":
+                    int sx = (int)(4 * scale) + anchorX;
+                    int sy = (int)(13 * scale) + anchorY;
+                    int sw = spec.Silhouette == "tower_bastion" ? 8 : 7;
+                    int sh = spec.Silhouette == "tower_bastion" ? 13 : 9;
+                    buffer.FillRect(sx, sy, S(sw), S(sh), spec.Material == "wood" ? wood : steel);
+                    buffer.DrawRectOutline(sx, sy, S(sw), S(sh), dark);
+                    buffer.DrawRectOutline(sx + S(1), sy + S(1), Math.Max(1, S(sw - 2)), Math.Max(1, S(sh - 2)), spec.Material == "wood" ? leather : gold);
+                    if (spec.Silhouette == "tower_bastion")
+                        buffer.FillRect(sx + S(2), sy + S(4), S(3), S(4), gold);
+                    else
+                        buffer.SetPixel(sx + S(3), sy + S(4), steelLight);
+                    break;
+
+                case "helmet":
+                    int hy = (int)(4 * scale) + anchorY;
+                    if (spec.Silhouette == "closed_vanguard")
+                    {
+                        Rect(11, 4, 10, 7, steel);
+                        Rect(13, 8, 6, 2, dark);
+                        Rect(12, 3, 8, 2, steelLight);
+                    }
+                    else
+                    {
+                        Rect(10, 5, 12, 4, leather);
+                        Rect(12, 3, 8, 2, leather);
+                        Rect(19, 2, 2, 5, gold);
+                    }
+                    break;
+
+                case "mask":
+                    int my = (int)(12 * scale) + anchorY;
+                    Rect(10, 12, 12, 8, spec.Material == "steel" ? steel : dark);
+                    if (spec.Silhouette == "lion_face")
+                    {
+                        Rect(8, 13, 3, 4, gold);
+                        Rect(21, 13, 3, 4, gold);
+                        Rect(14, 15, 4, 2, gold);
+                    }
+                    else if (spec.Silhouette == "war_face")
+                    {
+                        Rect(12, 14, 2, 2, crimson);
+                        Rect(18, 14, 2, 2, crimson);
+                        Rect(15, 17, 3, 2, steelLight);
+                    }
+                    else if (spec.Silhouette == "horned_face")
+                    {
+                        buffer.DrawLine((int)(11 * scale) + anchorX, my,
+                            (int)(7 * scale) + anchorX, (int)(8 * scale) + anchorY, crimson);
+                        buffer.DrawLine((int)(21 * scale) + anchorX, my,
+                            (int)(25 * scale) + anchorX, (int)(8 * scale) + anchorY, crimson);
+                    }
+                    else
+                    {
+                        Rect(12, 10, 2, 4, gold);
+                        Rect(18, 10, 2, 4, gold);
+                        Rect(14, 15, 4, 2, gold);
+                        buffer.SetPixel((int)(16 * scale) + anchorX, (int)(12 * scale) + anchorY, PixelColor32.White);
+                    }
+                    break;
+
+                case "relic":
+                    int rx = (int)(23 * scale) + anchorX;
+                    int ry = (int)(17 * scale) + anchorY;
+                    if (spec.Silhouette == "water_charm")
+                    {
+                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.SetPixel(rx, ry - S(1), PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "wind_talisman")
+                    {
+                        buffer.DrawLine(rx, ry + S(4), rx + S(2), ry - S(3), cyan);
+                        buffer.DrawLine(rx + S(2), ry - S(3), rx + S(5), ry - S(1), PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "earth_totem")
+                    {
+                        buffer.FillRect(rx - S(2), ry - S(4), S(4), S(8), leather);
+                        buffer.FillRect(rx - S(3), ry + S(2), S(6), S(2), gold);
+                    }
+                    else
+                    {
+                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.DrawCircle(rx, ry, S(4), cyan, false);
+                        buffer.SetPixel(rx, ry, PixelColor32.White);
+                    }
+                    break;
+            }
+
+            buffer.ApplyDarkOutline(dark);
+            return buffer;
+        }
+
         public static PixelBitmapBuffer GenerateItemIcon(string itemId)
         {
             var buffer = new PixelBitmapBuffer(24, 24);

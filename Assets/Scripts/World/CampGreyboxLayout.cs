@@ -82,12 +82,22 @@ namespace RhythmArmy.World
             CreateStreet(root.transform, "Street_NorthSouth", new Vector2(0, 8), new Vector2(3.5f, 35));
             CreateStreet(root.transform, "Street_Spirit", new Vector2(-20, 9), new Vector2(25, 3f));
             CreateStreet(root.transform, "Street_Feast", new Vector2(10, -8), new Vector2(28, 3f));
+            CreateStreet(root.transform, "Street_Residential", new Vector2(29, 9), new Vector2(25, 3f));
+            CreateStreet(root.transform, "Street_War", new Vector2(-4, 13), new Vector2(28, 3f));
+            CreateStreet(root.transform, "Street_AltarPath", new Vector2(-29, 13), new Vector2(16, 3f));
 
             // Soft perimeter walls keep the town feeling like a bounded, navigable place.
             CreateBarrier(root.transform, "Boundary_North", new Vector2(10, 25), new Vector2(82, 1));
             CreateBarrier(root.transform, "Boundary_South", new Vector2(10, -25), new Vector2(82, 1));
             CreateBarrier(root.transform, "Boundary_West", new Vector2(-52, 0), new Vector2(1, 50));
             CreateBarrier(root.transform, "Boundary_East", new Vector2(64, 0), new Vector2(1, 50));
+
+            // Vertical plazas create the layered town feel: upper spirit/war streets
+            // overlook the central square, while the feast quarter sits below it.
+            CreatePlatform(root.transform, "Upper_WarTerrace", new Vector2(-3, 17), new Vector2(18, 2));
+            CreatePlatform(root.transform, "SpiritTerrace", new Vector2(-34, 20), new Vector2(14, 2));
+            CreatePlatform(root.transform, "ResidentialTerrace", new Vector2(31, 18), new Vector2(17, 2));
+            CreatePlatform(root.transform, "MarketAwningWalk", new Vector2(31, 4), new Vector2(17, 1.5f));
 
             if (!showDebugGeometry)
                 foreach (Transform child in root.transform)
@@ -134,6 +144,16 @@ namespace RhythmArmy.World
             go.transform.position = new Vector3(center.x, center.y, 0);
             go.transform.localScale = new Vector3(size.x, size.y, 1);
             go.GetComponent<Renderer>().material = CreateMaterial(new Color(0.12f, 0.12f, 0.12f));
+        }
+
+        private void CreatePlatform(Transform root, string id, Vector2 center, Vector2 size)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = id;
+            go.transform.SetParent(root, false);
+            go.transform.position = new Vector3(center.x, center.y, 0);
+            go.transform.localScale = new Vector3(size.x, size.y, 0.75f);
+            go.GetComponent<Renderer>().material = CreateMaterial(new Color(0.24f, 0.19f, 0.15f));
         }
 
         private Material CreateMaterial(Color color)

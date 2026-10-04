@@ -86,3 +86,20 @@ Every level is authored from reusable gameplay markers:
 - Victory
 
 Art attaches to these markers later. The result should feel like a continuous authored adventure rather than disconnected combat arenas.
+
+
+## Greybox Route Coverage
+
+The greybox implementation now gives every campaign stage a distinct spatial route. The stages intentionally vary elevation, chokepoints, hazards, optional discoveries, reinforcement timing, and finale placement while preserving the continuous left-to-right rhythm journey.
+
+- Tidebreak Landing: coastal landing → ambush → fort → watch post → gate.
+- Reefside Ambush: changing tide → piers → optional sea cave → seawall → Tide Warden.
+- The Green Rampart: jungle trail → scout ambush → elevated bridge → rampart → beast.
+- Whispering Mire: mud and poison pools → fog ambush → root bridge → Mire Heart.
+- Caldera March: heat zones → lava bridge → forge outpost → lava surge → guardian.
+- Iron Gate: moat bridge → outer wall → tower crossfire → inner gate → war engine.
+- Dunes of the Fallen: open dunes → soft sand → buried shrine → canyon → temple → behemoth.
+- Whitefang Pass: ice slope → frozen cavern → cracking ice → ice gate → Frost Titan.
+- Altar of the Last Beat: ancient road → side crypt → falling stone → ritual bridge → final altar → guardian.
+
+The greybox is intentionally the layout pass: final biome geometry, pixel art, props, lighting and VFX should be layered on top of these traversal beats.

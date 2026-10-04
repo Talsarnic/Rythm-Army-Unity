@@ -846,7 +846,369 @@ namespace RhythmArmy.Visuals
         /// Generates a 24x24 px pixel icon for weapons, armors, materials, or charms.
         /// </summary>
         /// <summary>
+        /// Generates a full animation sheet containing the unit's current equipment layers.
+        /// Each animation frame receives the same equipment silhouette, keeping every layer
+        /// on the same pixel grid as the animated body.
+        /// </summary>
+        public static PixelBitmapBuffer GenerateEquipmentOverlaySheet(UnitMember member)
+        {
+            if (member == null) return new PixelBitmapBuffer(32 * 4, 32 * 9);
+
+            int size = PixelSpriteRegistry.GetSpec(member.Class).SpriteWidth;
+            var sheet = new PixelBitmapBuffer(size * 4, size * 9);
+            string[] itemIds =
+            {
+                member.WeaponId,
+                member.ShieldId,
+                member.HelmetId,
+                member.MaskId,
+                member.RelicId
+            };
+
+            for (int row = 0; row < 9; row++)
+            {
+                for (int frame = 0; frame < 4; frame++)
+                {
+                    int ox = frame * size;
+                    int oy = row * size;
+
+                    foreach (var itemId in itemIds)
+                    {
+                        if (string.IsNullOrEmpty(itemId)) continue;
+                        var overlay = GenerateEquipmentOverlay(itemId, size);
+                        sheet.Blit(overlay, ox, oy);
+                    }
+                }
+            }
+
+            return sheet;
+        }
+
+        /// <summary>
         /// Generates a transparent equipment overlay at the same frame size as the unit.
+        /// Equipment is intentionally authored as a separate silhouette layer so changing
+        /// gear changes the visible character rather than only changing combat stats.
+        /// </summary>
+        public static PixelBitmapBuffer GenerateEquipmentOverlay(string itemId, int size)
+        {
+            var buffer = new PixelBitmapBuffer(size, size);
+            var spec = EquipmentVisualRegistry.Get(itemId);
+            if (spec == null) return buffer;
+
+            float scale = size / 32f;
+            int cx = size / 2;
+            int anchorX = (int)(spec.AnchorOffset.X * scale);
+            int anchorY = (int)(spec.AnchorOffset.Y * scale);
+
+            PixelColor32 dark = PixelColor32.Black;
+            PixelColor32 steel = PixelColor32.SteelMid;
+            PixelColor32 steelLight = PixelColor32.SteelLight;
+            PixelColor32 wood = PixelColor32.WoodBrown;
+            PixelColor32 leather = PixelColor32.LeatherMid;
+            PixelColor32 gold = PixelColor32.GoldMid;
+            PixelColor32 crimson = PixelColor32.Crimson;
+            PixelColor32 cyan = PixelColor32.SpiritCyan;
+
+            int S(float value) { return Math.Max(1, (int)Math.Round(value * scale)); }
+            void Rect(int x, int y, int w, int h, PixelColor32 color)
+            {
+                buffer.FillRect((int)(x * scale) + anchorX, (int)(y * scale) + anchorY,
+                    S(w), S(h), color);
+            }
+
+            switch (spec.Family)
+            {
+                case "spear":
+                    int shaftX = (int)(21 * scale) + anchorX;
+                    int shaftY = (int)(21 * scale) + anchorY;
+                    int tipX = (int)(29 * scale) + anchorX;
+                    int tipY = (int)(8 * scale) + anchorY;
+                    buffer.DrawLine(shaftX, shaftY, tipX, tipY, spec.Material == "wood" ? wood : steel);
+                    if (spec.Silhouette == "forked_thunder")
+                    {
+                        buffer.DrawLine(tipX, tipY, tipX - S(2), tipY - S(4), cyan);
+                        buffer.DrawLine(tipX, tipY, tipX + S(2), tipY - S(4), cyan);
+                        buffer.SetPixel(tipX, tipY, PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "leaf_blade")
+                    {
+                        buffer.FillRect(tipX - S(1), tipY - S(3), S(3), S(5), steelLight);
+                        buffer.SetPixel(tipX, tipY - S(4), PixelColor32.White);
+                    }
+                    else
+                    {
+                        buffer.FillRect(tipX - S(1), tipY - S(2), S(3), S(3), steelLight);
+                    }
+                    break;
+
+                case "shield":
+                    int sx = (int)(4 * scale) + anchorX;
+                    int sy = (int)(13 * scale) + anchorY;
+                    int sw = spec.Silhouette == "tower_bastion" ? 8 : 7;
+                    int sh = spec.Silhouette == "tower_bastion" ? 13 : 9;
+                    buffer.FillRect(sx, sy, S(sw), S(sh), spec.Material == "wood" ? wood : steel);
+                    buffer.DrawRectOutline(sx, sy, S(sw), S(sh), dark);
+                    buffer.DrawRectOutline(sx + S(1), sy + S(1), Math.Max(1, S(sw - 2)), Math.Max(1, S(sh - 2)), spec.Material == "wood" ? leather : gold);
+                    if (spec.Silhouette == "tower_bastion")
+                        buffer.FillRect(sx + S(2), sy + S(4), S(3), S(4), gold);
+                    else
+                        buffer.SetPixel(sx + S(3), sy + S(4), steelLight);
+                    break;
+
+                case "helmet":
+                    int hy = (int)(4 * scale) + anchorY;
+                    if (spec.Silhouette == "closed_vanguard")
+                    {
+                        Rect(11, 4, 10, 7, steel);
+                        Rect(13, 8, 6, 2, dark);
+                        Rect(12, 3, 8, 2, steelLight);
+                    }
+                    else
+                    {
+                        Rect(10, 5, 12, 4, leather);
+                        Rect(12, 3, 8, 2, leather);
+                        Rect(19, 2, 2, 5, gold);
+                    }
+                    break;
+
+                case "mask":
+                    int my = (int)(12 * scale) + anchorY;
+                    Rect(10, 12, 12, 8, spec.Material == "steel" ? steel : dark);
+                    if (spec.Silhouette == "lion_face")
+                    {
+                        Rect(8, 13, 3, 4, gold);
+                        Rect(21, 13, 3, 4, gold);
+                        Rect(14, 15, 4, 2, gold);
+                    }
+                    else if (spec.Silhouette == "war_face")
+                    {
+                        Rect(12, 14, 2, 2, crimson);
+                        Rect(18, 14, 2, 2, crimson);
+                        Rect(15, 17, 3, 2, steelLight);
+                    }
+                    else if (spec.Silhouette == "horned_face")
+                    {
+                        buffer.DrawLine((int)(11 * scale) + anchorX, my,
+                            (int)(7 * scale) + anchorX, (int)(8 * scale) + anchorY, crimson);
+                        buffer.DrawLine((int)(21 * scale) + anchorX, my,
+                            (int)(25 * scale) + anchorX, (int)(8 * scale) + anchorY, crimson);
+                    }
+                    else
+                    {
+                        Rect(12, 10, 2, 4, gold);
+                        Rect(18, 10, 2, 4, gold);
+                        Rect(14, 15, 4, 2, gold);
+                        buffer.SetPixel((int)(16 * scale) + anchorX, (int)(12 * scale) + anchorY, PixelColor32.White);
+                    }
+                    break;
+
+                case "relic":
+                    int rx = (int)(23 * scale) + anchorX;
+                    int ry = (int)(17 * scale) + anchorY;
+                    if (spec.Silhouette == "water_charm")
+                    {
+                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.SetPixel(rx, ry - S(1), PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "wind_talisman")
+                    {
+                        buffer.DrawLine(rx, ry + S(4), rx + S(2), ry - S(3), cyan);
+                        buffer.DrawLine(rx + S(2), ry - S(3), rx + S(5), ry - S(1), PixelColor32.White);
+                    }
+                    else if (spec.Silhouette == "earth_totem")
+                    {
+                        buffer.FillRect(rx - S(2), ry - S(4), S(4), S(8), leather);
+                        buffer.FillRect(rx - S(3), ry + S(2), S(6), S(2), gold);
+                    }
+                    else
+                    {
+                        buffer.FillCircle(rx, ry, S(3), cyan, true);
+                        buffer.DrawCircle(rx, ry, S(4), cyan, false);
+                        buffer.SetPixel(rx, ry, PixelColor32.White);
+                    }
+                    break;
+            }
+
+            buffer.ApplyDarkOutline(dark);
+            return buffer;
+        }
+
+        public static PixelBitmapBuffer GenerateItemIcon(string itemId)
+        {
+            var buffer = new PixelBitmapBuffer(24, 24);
+            // Engraved parchment / slate item frame
+            buffer.FillRect(0, 0, 24, 24, PixelColor32.FromHex("#1A202C"));
+            buffer.DrawRectOutline(0, 0, 24, 24, PixelColor32.FromHex("#37474F"));
+            buffer.FillRect(2, 2, 20, 20, PixelColor32.FromHex("#263238"));
+
+            if (itemId.StartsWith("wpn-") || itemId.StartsWith("spear-") || itemId.StartsWith("sword-") || itemId.StartsWith("bow-") || itemId.StartsWith("hammer-") || itemId.StartsWith("horn-") || itemId.StartsWith("staff-") || itemId.StartsWith("fist-"))
+            {
+                // Gleaming Weapon Blade & Hilt
+                buffer.DrawLine(4, 20, 19, 5, PixelColor32.SteelLight);
+                buffer.DrawLine(5, 20, 20, 5, PixelColor32.White);
+                buffer.DrawLine(3, 19, 7, 23, PixelColor32.WoodBrown); // Crossguard
+                buffer.SetPixel(19, 4, PixelColor32.GoldMid); // Gem tip
+                buffer.SetPixel(20, 4, PixelColor32.White);
+            }
+            else if (itemId.StartsWith("shd-") || itemId.StartsWith("shield-"))
+            {
+                // Heraldic Kite Shield Crest
+                buffer.FillRect(5, 4, 14, 15, PixelColor32.SteelMid);
+                buffer.DrawRectOutline(5, 4, 14, 15, PixelColor32.GoldMid);
+                buffer.FillCircle(12, 11, 3, PixelColor32.SpiritCyan);
+                buffer.SetPixel(12, 11, PixelColor32.White);
+            }
+            else if (itemId.StartsWith("hlm-") || itemId.StartsWith("helm-") || itemId.StartsWith("hero-mask-"))
+            {
+                // Royal Knight Helmet / Relic Mask
+                buffer.FillRect(5, 6, 14, 12, PixelColor32.SteelMid);
+                buffer.DrawLine(6, 12, 17, 12, PixelColor32.Black); // Visor slit
+                buffer.DrawLine(11, 2, 13, 6, PixelColor32.Crimson); // Plume
+                buffer.SetPixel(12, 2, PixelColor32.GoldMid);
+            }
+            else if (itemId.StartsWith("gem-"))
+            {
+                // Faceted Elemental Gem Jewel
+                PixelColor32 gemCol = itemId.Contains("flame") ? PixelColor32.Crimson :
+                                      itemId.Contains("frost") ? PixelColor32.SpiritCyan :
+                                      itemId.Contains("lightning") ? PixelColor32.AmberGold : PixelColor32.VerdantMoss;
+                buffer.FillCircle(12, 12, 6, gemCol);
+                buffer.DrawCircle(12, 12, 6, PixelColor32.White, false);
+                buffer.SetPixel(10, 9, PixelColor32.White); // Specular glint
+            }
+            else if (itemId.StartsWith("charm-") || itemId.StartsWith("food-"))
+            {
+                // Glass Alchemy Flask / Feast Bowl
+                buffer.FillCircle(12, 14, 6, PixelColor32.Crimson);
+                buffer.FillRect(10, 5, 4, 5, PixelColor32.WoodBrown); // Cork neck
+                buffer.SetPixel(10, 12, PixelColor32.White); // Glass highlight
+            }
+            else
+            {
+                // Raw Crafting Material (Ore, timber, hide, alloy)
+                buffer.FillRect(6, 7, 12, 10, PixelColor32.WoodBrown);
+                buffer.DrawLine(7, 8, 17, 15, PixelColor32.AmberGold);
+                buffer.SetPixel(15, 10, PixelColor32.SteelGlint);
+            }
+
+            buffer.ApplyDarkOutline(PixelColor32.Black);
+            return buffer;
+        }
+
+        /// <summary>
+        /// Generates a 16x16 px environment biome tile.
+        /// </summary>
+        public static PixelBitmapBuffer GenerateBiomeTile(BiomeType biome, TileLayerType layer)
+        {
+            var buffer = new PixelBitmapBuffer(16, 16);
+            PixelColor32 baseColor;
+            PixelColor32 detailColor;
+
+            switch (biome)
+            {
+                case BiomeType.CoralCoast:
+                    baseColor = PixelColor32.FromHex("#FFE082"); // Warm golden sand
+                    detailColor = PixelColor32.OceanicTeal;
+                    break;
+                case BiomeType.JungleFort:
+                    baseColor = PixelColor32.FromHex("#388E3C"); // Jungle foliage
+                    detailColor = PixelColor32.FromHex("#1B5E20");
+                    break;
+                case BiomeType.VolcanicCaldera:
+                    baseColor = PixelColor32.FromHex("#263238"); // Obsidian basalt
+                    detailColor = PixelColor32.Crimson;
+                    break;
+                case BiomeType.IronBastion:
+                    baseColor = PixelColor32.FromHex("#546E7A"); // Cobblestone
+                    detailColor = PixelColor32.FromHex("#37474F");
+                    break;
+                default:
+                    baseColor = PixelColor32.FromHex("#78909C");
+                    detailColor = PixelColor32.FromHex("#455A64");
+                    break;
+            }
+
+            buffer.FillRect(0, 0, 16, 16, baseColor);
+
+            if (layer == TileLayerType.Ground)
+            {
+                // Textured dither
+                buffer.SetPixel(3, 4, detailColor);
+                buffer.SetPixel(7, 12, detailColor);
+                buffer.SetPixel(13, 8, detailColor);
+                buffer.SetPixel(11, 2, detailColor);
+                buffer.SetPixel(4, 14, baseColor.Lighten(0.2f));
+            }
+            else if (layer == TileLayerType.Obstacles)
+            {
+                // Stone/structure border
+                buffer.FillRect(2, 2, 12, 12, detailColor);
+                buffer.DrawLine(4, 4, 12, 4, PixelColor32.White);
+            }
+
+            buffer.ApplyDarkOutline(PixelColor32.Black);
+            return buffer;
+        }
+
+        private static PixelColor32 GetSpeciesSkinColor(Subspecies species)
+        {
+            switch (species)
+            {
+                case Subspecies.Swiftpaw: return PixelColor32.FromHex("#FFCC80"); // Sandy rabbit
+                case Subspecies.Frogtide: return PixelColor32.FromHex("#80CBC4"); // Amphibian cyan
+                case Subspecies.Ironwool: return PixelColor32.FromHex("#ECEFF1"); // Pure wool white
+                case Subspecies.Colossus: return PixelColor32.FromHex("#B0BEC5"); // Slate horn
+                case Subspecies.Apex: return PixelColor32.FromHex("#FFE082"); // Celestial gold
+                default: return PixelColor32.FromHex("#FFFFFF"); // Classic white
+            }
+        }
+
+        private static PixelColor32 GetClassAccentColor(UnitClass unitClass)
+        {
+            switch (unitClass)
+            {
+                case UnitClass.Banner: return PixelColor32.AmberGold;
+                case UnitClass.Spearman: return PixelColor32.Crimson;
+                case UnitClass.Swordsman: return PixelColor32.OceanicTeal;
+                case UnitClass.Archer: return PixelColor32.VerdantMoss;
+                case UnitClass.Cavalry: return PixelColor32.AmberGold;
+                case UnitClass.Hammerer: return PixelColor32.ObsidianSlate;
+                case UnitClass.Hornist: return PixelColor32.SpiritCyan;
+                case UnitClass.Skyrider: return PixelColor32.MithrilBlue;
+                case UnitClass.Mage: return PixelColor32.FromHex("#AB47BC");
+                case UnitClass.Brawler: return PixelColor32.FromHex("#E65100");
+                default: return PixelColor32.AmberGold;
+            }
+        }
+
+        private static PixelColor32 GetEnemyBaseColor(EnemyKind kind)
+        {
+            switch (kind)
+            {
+                case EnemyKind.PlainsRunner: return PixelColor32.AmberGold;
+                case EnemyKind.WildBoar: return PixelColor32.LeatherBrown;
+                case EnemyKind.GiantBoar: return PixelColor32.Crimson;
+                case EnemyKind.Stag: return PixelColor32.WoodBrown;
+                case EnemyKind.IronBehemoth: return PixelColor32.ObsidianSlate;
+                case EnemyKind.DrakeTitan: return PixelColor32.DragonRuby;
+                case EnemyKind.ColossusGolem: return PixelColor32.IronGrey;
+                default: return PixelColor32.ObsidianSlate;
+            }
+        }
+
+        private static PixelColor32 GetEnemyAccentColor(EnemyKind kind)
+        {
+            switch (kind)
+            {
+                case EnemyKind.IronBehemoth: return PixelColor32.DragonRuby;
+                case EnemyKind.DrakeTitan: return PixelColor32.AmberGold;
+                case EnemyKind.ColossusGolem: return PixelColor32.SpiritCyan;
+                default: return PixelColor32.Crimson;
+            }
+        }
+    }
+}
+
         /// Equipment is intentionally authored as a separate silhouette layer so changing
         /// gear changes the visible character rather than only changing combat stats.
         /// </summary>

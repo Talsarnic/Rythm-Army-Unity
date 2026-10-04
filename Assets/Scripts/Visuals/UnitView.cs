@@ -104,6 +104,60 @@ namespace RhythmArmy.Visuals
             }
         }
 
+        public void ApplyCombatAnimationCue(CombatAnimationCue cue)
+        {
+            switch (cue)
+            {
+                case CombatAnimationCue.AttackAnticipation:
+                case CombatAnimationCue.AttackRelease:
+                case CombatAnimationCue.AttackImpact:
+                    SetState(UnitVisualState.Attacking);
+                    break;
+                case CombatAnimationCue.AttackRecovery:
+                    SetState(UnitVisualState.Idle);
+                    break;
+                case CombatAnimationCue.ChargeAnticipation:
+                case CombatAnimationCue.ChargeSurge:
+                    SetState(UnitVisualState.Charging);
+                    break;
+                case CombatAnimationCue.ChargeRecovery:
+                    SetState(UnitVisualState.Idle);
+                    break;
+                case CombatAnimationCue.DefendStart:
+                case CombatAnimationCue.DefendHold:
+                    SetState(UnitVisualState.Defending);
+                    break;
+                case CombatAnimationCue.DefendRecovery:
+                    SetState(UnitVisualState.Idle);
+                    break;
+                case CombatAnimationCue.JumpTakeoff:
+                case CombatAnimationCue.JumpAirborne:
+                case CombatAnimationCue.JumpLanding:
+                    SetState(UnitVisualState.Jumping);
+                    break;
+                case CombatAnimationCue.JumpRecovery:
+                    SetState(UnitVisualState.Idle);
+                    break;
+                case CombatAnimationCue.MarchStart:
+                    SetState(UnitVisualState.Marching);
+                    break;
+                case CombatAnimationCue.FeverPulse:
+                    IsFeverActive = true;
+                    SetState(UnitVisualState.Fever);
+                    break;
+                case CombatAnimationCue.HeroAbilityStart:
+                case CombatAnimationCue.HeroAbilityImpact:
+                    SetState(UnitVisualState.HeroAbility);
+                    break;
+                case CombatAnimationCue.HeroAbilityRecovery:
+                    SetState(UnitVisualState.Idle);
+                    break;
+                case CombatAnimationCue.VictoryMarch:
+                    SetState(UnitVisualState.Victory);
+                    break;
+            }
+        }
+
         public void TakeDamage(float damage)
         {
             HurtFlashTimer = 0.18f;

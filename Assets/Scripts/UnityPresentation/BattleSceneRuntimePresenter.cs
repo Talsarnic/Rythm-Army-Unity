@@ -134,10 +134,10 @@ namespace RhythmArmy.UnityPresentation
             _environmentMid = CreateTexture(mid, "CoralCoast_Mid");
             _environmentGround = CreateTexture(ground, "CoralCoast_Ground");
 
-            CreateBackgroundLayer(_environmentSky, 0.00f, 20);
-            CreateBackgroundLayer(_environmentFar, 0.18f, 19);
-            CreateBackgroundLayer(_environmentMid, 0.42f, 18);
-            CreateBackgroundLayer(_environmentGround, 0.78f, 17);
+            CreateBackgroundLayer(_environmentSky, 0.00f, 10);
+            CreateBackgroundLayer(_environmentFar, 0.18f, 12);
+            CreateBackgroundLayer(_environmentMid, 0.42f, 14);
+            CreateBackgroundLayer(_environmentGround, 0.78f, 16);
 
             // A restrained foreground path gives the units a clear marching lane.
             var pathObject = new GameObject("ProductionPath");

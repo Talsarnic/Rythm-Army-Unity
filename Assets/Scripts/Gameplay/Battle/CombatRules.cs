@@ -217,6 +217,7 @@ namespace RhythmArmy.Gameplay.Battle
                     break;
             }
 
+            UpdateTerrainState(state);
             ResolveFormationCollisions(state);
             UpdateFormationPressure(state, command);
             ApplyTerrainHazards(state);
@@ -373,7 +374,9 @@ namespace RhythmArmy.Gameplay.Battle
 
         private static void ExecuteRetreat(BattleState state)
         {
-            state.BannerX = Math.Max(50f, state.BannerX - RetreatStepDistance);
+            TerrainProfile terrain = TerrainRules.GetProfile(state.Mission, state.BannerX);
+            float retreatDistance = RetreatStepDistance * terrain.MovementMultiplier;
+            state.BannerX = Math.Max(50f, state.BannerX - retreatDistance);
             foreach (var unit in state.Units.Where(u => u.IsAlive))
             {
                 unit.IsRushing = false;
@@ -391,13 +394,17 @@ namespace RhythmArmy.Gameplay.Battle
             // this forward momentum into bonus damage.
             foreach (var unit in state.Units.Where(u => u.IsAlive))
             {
+                TerrainProfile terrain = TerrainRules.GetProfile(state.Mission, unit.X);
                 float distance = unit.Member.Class == UnitClass.Cavalry ||
                                  unit.Member.Class == UnitClass.Skyrider ? 145f : 85f;
+                distance *= TerrainRules.GetMovementMultiplier(terrain, unit.Member.Class);
+                distance *= TerrainRules.GetChargeMultiplier(terrain);
                 unit.X += distance;
                 unit.IsRushing = true;
             }
 
-            state.BannerX += 45f;
+            TerrainProfile bannerTerrain = TerrainRules.GetProfile(state.Mission, state.BannerX);
+            state.BannerX += 45f * TerrainRules.GetChargeMultiplier(bannerTerrain);
         }
 
         private static void ExecuteJump(BattleState state)

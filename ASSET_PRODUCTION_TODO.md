@@ -105,9 +105,9 @@ These are required to make the recent rhythm-combat movement feel deliberate rat
 
 These are code/data tasks rather than sprite assets, but they are required to make the animation assets useful.
 
-- [ ] Beat-number animation event windows for each command.
-- [ ] Individual unit attack stagger based on formation index / stable unit identity.
-- [ ] Separate anticipation, active, and recovery timing in `PixelAnimation`.
+- [~] Beat-number animation cue windows for each command (runtime director integrated; final art timing still needs validation).
+- [~] Individual unit attack stagger based on formation index / stable unit identity (runtime cue stagger integrated).
+- [~] Separate anticipation, active, and recovery timing at runtime (cue director integrated; dedicated sprite-frame authoring still needed).
 - [ ] Frontline collision pressure / crowd separation.
 - [ ] Enemy impact reaction timing.
 - [ ] Formation morale / pressure feedback when surrounded.

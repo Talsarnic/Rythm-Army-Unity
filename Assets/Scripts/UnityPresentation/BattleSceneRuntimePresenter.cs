@@ -26,6 +26,7 @@ namespace RhythmArmy.UnityPresentation
         private Camera _camera;
         private readonly Dictionary<string, RuntimeActor> _actors = new Dictionary<string, RuntimeActor>();
         private readonly Dictionary<UnitClass, Texture2D> _unitTextures = new Dictionary<UnitClass, Texture2D>();
+        private readonly Dictionary<string, Texture2D> _equipmentTextures = new Dictionary<string, Texture2D>();
         private readonly Dictionary<EnemyKind, Texture2D> _enemyTextures = new Dictionary<EnemyKind, Texture2D>();
         private readonly List<Texture2D> _ownedTextures = new List<Texture2D>();
         private readonly List<Sprite> _ownedSprites = new List<Sprite>();
@@ -46,11 +47,13 @@ namespace RhythmArmy.UnityPresentation
         {
             public GameObject Object;
             public SpriteRenderer Renderer;
+            public SpriteRenderer EquipmentRenderer;
             public bool IsEnemy;
             public string Id;
             public UnitView Unit;
             public EnemyView Enemy;
             public Texture2D Sheet;
+            public Texture2D EquipmentSheet;
             public int SpriteSize;
         }
 
@@ -207,16 +210,24 @@ namespace RhythmArmy.UnityPresentation
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sortingOrder = 100 + unit.UnitMember.Class.GetHashCode() % 10;
 
+            var equipmentObject = new GameObject("Equipment");
+            equipmentObject.transform.SetParent(go.transform, false);
+            var equipmentRenderer = equipmentObject.AddComponent<SpriteRenderer>();
+            equipmentRenderer.sortingOrder = renderer.sortingOrder + 1;
+
             var texture = GetUnitTexture(unit.UnitMember.Class, unit.UnitMember.Subspecies);
+            var equipmentTexture = GetEquipmentTexture(unit.UnitMember);
             var size = PixelSpriteRegistry.GetSpec(unit.UnitMember.Class).SpriteWidth;
             var actor = new RuntimeActor
             {
                 Object = go,
                 Renderer = renderer,
+                EquipmentRenderer = equipmentRenderer,
                 IsEnemy = false,
                 Id = id,
                 Unit = unit,
                 Sheet = texture,
+                EquipmentSheet = equipmentTexture,
                 SpriteSize = size
             };
             _actors[id] = actor;
@@ -259,6 +270,23 @@ namespace RhythmArmy.UnityPresentation
             return texture;
         }
 
+        private Texture2D GetEquipmentTexture(UnitMember member)
+        {
+            if (member == null) return null;
+
+            string key = member.Id + "|" + member.WeaponId + "|" + member.ShieldId + "|" +
+                         member.HelmetId + "|" + member.MaskId + "|" + member.RelicId;
+
+            Texture2D cached;
+            if (_equipmentTextures.TryGetValue(key, out cached))
+                return cached;
+
+            var buffer = PixelAssetGenerator.GenerateEquipmentOverlaySheet(member);
+            var texture = CreateTexture(buffer, "Equipment_" + member.Id);
+            _equipmentTextures[key] = texture;
+            return texture;
+        }
+
         private Texture2D GetEnemyTexture(EnemyKind kind)
         {
             if (_enemyTextures.TryGetValue(kind, out var cached))
@@ -286,6 +314,19 @@ namespace RhythmArmy.UnityPresentation
 
             actor.Renderer.sprite = CreateSheetSprite(actor.Sheet, index * size, row * size, size, size, "UnitFrame");
             actor.Renderer.flipX = !actor.Unit.FacingRight;
+
+            if (actor.EquipmentRenderer != null && actor.EquipmentSheet != null)
+            {
+                actor.EquipmentRenderer.sprite = CreateSheetSprite(
+                    actor.EquipmentSheet,
+                    index * size,
+                    row * size,
+                    size,
+                    size,
+                    "EquipmentFrame");
+                actor.EquipmentRenderer.flipX = actor.Renderer.flipX;
+            }
+
             actor.Object.transform.position = ToWorldPosition(actor.Unit.VisualX, actor.Unit.VisualY, 0f);
         }
 

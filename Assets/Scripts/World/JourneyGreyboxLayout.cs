@@ -36,7 +36,6 @@ namespace RhythmArmy.World
     {
         [SerializeField] private string levelId = "coast-01";
         [SerializeField] private bool buildOnStart = true;
-        [SerializeField] private bool showDebugGeometry = true;
 
         public string LevelId => levelId;
         public IReadOnlyList<JourneyMarker> Markers => _markers;

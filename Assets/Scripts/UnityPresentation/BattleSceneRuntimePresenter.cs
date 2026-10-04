@@ -261,12 +261,13 @@ namespace RhythmArmy.UnityPresentation
 
         private Texture2D GetUnitTexture(UnitClass unitClass, Subspecies species)
         {
-            if (_unitTextures.TryGetValue(unitClass, out var cached))
+            string key = unitClass + "|" + species;
+            if (_unitTextures.TryGetValue(key, out var cached))
                 return cached;
 
             var buffer = PixelAssetGenerator.GenerateUnitSpriteSheet(unitClass, species);
-            var texture = CreateTexture(buffer, "Unit_" + unitClass);
-            _unitTextures[unitClass] = texture;
+            var texture = CreateTexture(buffer, "Unit_" + unitClass + "_" + species);
+            _unitTextures[key] = texture;
             return texture;
         }
 

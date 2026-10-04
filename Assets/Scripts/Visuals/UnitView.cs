@@ -56,9 +56,8 @@ namespace RhythmArmy.Visuals
             FacingRight = true;
             CurrentState = UnitVisualState.Idle;
 
-            var spriteSpec = PixelSpriteRegistry.GetSpec(liveData.Member.Class);
             Animator = PixelAnimator.CreateStandardUnitAnimator(
-                liveData.Member.Class.ToString().ToLowerInvariant(), spriteSpec.SpriteWidth);
+                liveData.Member.Class.ToString().ToLowerInvariant(), 32);
             RefreshEquipmentSprites();
         }
 

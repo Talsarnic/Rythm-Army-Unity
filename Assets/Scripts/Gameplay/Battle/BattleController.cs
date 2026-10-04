@@ -203,12 +203,12 @@ namespace RhythmArmy.Gameplay.Battle
 
         private void HandleUnitAnimationCue(UnitAnimationCue cue)
         {
-            if (cue == null) return;
+            string cueUnitId = cue.Unit != null && cue.Unit.Member != null ? cue.Unit.Member.Id : null;
 
             foreach (var unit in UnitViews)
             {
                 if (unit == null || unit.LiveData == null) continue;
-                if (cue.UnitId == null || cue.UnitId == unit.LiveData.Member.Id)
+                if (string.IsNullOrEmpty(cueUnitId) || cueUnitId == unit.LiveData.Member.Id)
                     unit.ApplyCombatAnimationCue(cue.Cue);
             }
         }

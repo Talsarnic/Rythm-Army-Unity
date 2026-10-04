@@ -111,7 +111,7 @@ These are code/data tasks rather than sprite assets, but they are required to ma
 - [~] Frontline collision pressure / crowd separation — runtime separation and frontline pushback integrated.
 - [~] Enemy impact reaction timing — runtime combat feedback events drive hit reactions at damage resolution.
 - [~] Formation morale / pressure feedback when surrounded — persistent 0–100 formation pressure/integrity model integrated.
-- [ ] Terrain movement modifiers.
+- [~] Terrain movement modifiers — biome terrain profiles now affect movement, heavy-unit mobility, charge momentum, ranged damage, and volcanic heat hazards.
 - [~] Camera framing around army/enemy engagement — engagement impacts now add responsive camera trauma; full framing pass remains.
 - [ ] Beat 1 and command-resolution audio accents.
 

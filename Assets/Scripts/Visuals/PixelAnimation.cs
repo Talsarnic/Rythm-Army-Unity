@@ -74,23 +74,23 @@ namespace RhythmArmy.Visuals
         public static PixelAnimator CreateStandardUnitAnimator(string unitId,int spriteSize=32)
         {
             var anim=new PixelAnimator{UnitId=unitId};
-            Add(anim,"Idle",0,4,0.15f,true);
-            Add(anim,"March",1,4,0.125f,true,new[]{"Step",null,"Step",null});
-            Add(anim,"Attack",2,4,0.10f,false,new[]{"Windup","Release","Impact",null});
-            Add(anim,"Defend",3,2,0.25f,true,new[]{"ShieldWall",null});
-            Add(anim,"Fever",4,4,0.10f,true,new[]{"Chant",null,"Chant",null});
-            Add(anim,"Charge",5,3,0.10f,false,new[]{"ChargeStart",null,"ChargeImpact"});
-            Add(anim,"Jump",6,3,0.12f,false,new[]{"JumpStart",null,"Land"});
-            Add(anim,"Hurt",7,2,0.10f,false);
-            Add(anim,"Death",8,3,0.12f,false,new[]{"DeathStart",null,"SpiritRise"});
-            Add(anim,"HeroAbility",2,4,0.08f,false,new[]{"HeroStart","HeroRelease","HeroImpact",null});
+            Add(anim,"Idle",0,4,0.15f,true,spriteSize);
+            Add(anim,"March",1,4,0.125f,true,spriteSize,new[]{"Step",null,"Step",null});
+            Add(anim,"Attack",2,4,0.10f,false,spriteSize,new[]{"Windup","Release","Impact",null});
+            Add(anim,"Defend",3,2,0.25f,true,spriteSize,new[]{"ShieldWall",null});
+            Add(anim,"Fever",4,4,0.10f,true,spriteSize,new[]{"Chant",null,"Chant",null});
+            Add(anim,"Charge",5,3,0.10f,false,spriteSize,new[]{"ChargeStart",null,"ChargeImpact"});
+            Add(anim,"Jump",6,3,0.12f,false,spriteSize,new[]{"JumpStart",null,"Land"});
+            Add(anim,"Hurt",7,2,0.10f,false,spriteSize);
+            Add(anim,"Death",8,3,0.12f,false,spriteSize,new[]{"DeathStart",null,"SpiritRise"});
+            Add(anim,"HeroAbility",2,4,0.08f,false,spriteSize,new[]{"HeroStart","HeroRelease","HeroImpact",null});
             anim.Play("Idle");
             return anim;
         }
-        private static void Add(PixelAnimator anim,string name,int row,int count,float duration,bool loop,string[] tags=null)
+        private static void Add(PixelAnimator anim,string name,int row,int count,float duration,bool loop,int spriteSize,string[] tags=null)
         {
             var state=new AnimationStateDef(name,loop);
-            int size=32;
+            int size=spriteSize;
             for(int i=0;i<count;i++)state.AddFrame(i*size,row*size,size,size,duration,tags!=null&&i<tags.Length?tags[i]:null);
             anim.States[name]=state;
         }

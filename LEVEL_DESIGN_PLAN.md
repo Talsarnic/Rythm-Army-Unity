@@ -1,75 +1,88 @@
-# Rhythm Army — Level Design Plan
+# Rhythm Army — Patapon-Inspired Level Design
 
-## Global battle-space contract
+## Core direction
+Campaign levels should feel like rhythm-driven journeys, not conventional platforming stages. The player continuously advances across a long side-view route while issuing commands through rhythm patterns. The environment creates encounters, tactical decisions, discoveries, hazards, and set pieces.
 
-All campaign battle scenes use a consistent 2D side-view structure so art can be produced as interchangeable environment kits.
+The design is inspired by the structure and pacing of classic rhythm-army journeys, but all characters, locations, mechanics, encounters, layouts, and visual language remain original to Rhythm Army.
 
-- Gameplay camera target: 384x216.
-- Combat lane: one readable horizontal lane with shallow foreground/background depth.
-- Recommended playable width: 18–30 screen widths per stage.
-- Four environment layers: sky/atmosphere, far scenery, mid terrain, foreground ground.
-- Combat anchors are authored independently of art: Spawn, Rally, Objective, Reinforcement, Boss, Exit.
-- Every level contains at least one visual landmark every 3–5 screen widths.
-- Keep the center 55–65% of the screen visually quiet enough for units, projectiles, hit sparks, and rhythm feedback.
-- Use foreground occlusion sparingly; never hide command-critical units.
+## Journey structure
+March -> Encounter -> Tactical response -> Advance -> Discovery -> Major encounter -> Advance -> Set piece -> Objective
 
-## Campaign progression
+Travel sections provide changing scenery, environmental storytelling, small enemy groups, resource pickups, visual landmarks, and anticipation before major encounters.
 
-1. Coral Coast — tutorial biome; teaches movement, attack, defend, charge.
-2. Jungle Fort — introduces barricades and denser enemy formations.
-3. Misty Swamp — introduces survival pressure, hazards, and visibility atmosphere.
-4. Volcanic Caldera — introduces heat/fire hazards and aggressive pacing.
-5. Iron Bastion — fortification-heavy siege stage.
-6. Desert Dunes — long sightlines and ranged pressure.
-7. Frozen Peaks — elite enemies and boss encounter.
-8. Ruin Altar — final ritual/boss stage.
+Combat encounters interrupt the journey naturally: patrols, cave ambushes, forts, ranged ridges, cavalry charges, or monsters breaking through scenery.
 
-## Coral Coast vertical slice
+## Tactical rhythm
+- March — continue advancing
+- Attack — damage enemies
+- Defend — survive incoming attacks
+- Charge — create an aggressive push
+- Jump — avoid/clear an environmental threat
+- Miracle — answer major environmental or combat situations
+
+## Level pacing
+1. Opening tableau
+2. Warm-up encounter
+3. Journey section
+4. First tactical challenge
+5. Reward/discovery
+6. Escalation
+7. Major landmark
+8. Set-piece encounter
+9. Final objective
+10. Victory march
+
+## Original mechanics
+### Formation pressure
+Enemies can attempt to split or surround the army. Defend/charge decisions affect formation integrity.
+
+### Terrain states
+Deep water slows heavy units; mud reduces movement; ice increases momentum; volcanic ground creates heat zones; sand reduces ranged accuracy; elevated ground improves projectile range.
+
+### Environmental interaction
+Jump over collapsing bridges, attack hanging objects, charge through weak barriers, defend against falling debris, and use miracles to alter weather or terrain.
+
+### Discoveries
+Optional paths can contain hidden caves, treasure caches, rescued travelers, resource nodes, rare enemies, or shortcuts.
+
+## Coral Coast — first complete stage
 
 ### Tidebreak Landing
-Purpose: first polished level and art validation.
+A storm-battered beach journey.
 
-Layout:
-- Start beach -> broken pier -> coral shelf -> enemy camp -> small fort gate -> victory overlook.
-- 7 combat beats.
-- 2 reinforcement points.
-- 1 destructible barricade.
-- 1 optional treasure alcove.
-- No environmental damage during first half.
-- Final beat introduces a compact enemy formation rather than a boss.
+**A — Landing:** shipwrecks, wildlife, scouts, low-pressure march.
 
-Landmarks:
-- shipwreck silhouette at start
-- giant coral arch around 35%
-- abandoned watch post around 60%
-- glowing tide pool near objective
+**B — Coral Flats:** open battlefield and first organized formation.
 
-### Reefside Ambush
-Purpose: first meaningful build check.
+**C — Broken Causeway:** damaged bridge, Jump introduction, optional material route.
 
-Layout:
-- Start on beach -> narrow coral channel -> open arena -> barricaded enemy post -> elevated lookout -> exit.
-- Introduces enemy archers and a stronger fortification.
-- Optional upper path contains materials.
+**D — Tide Cave:** short cave passage and enemy ambush.
 
-## Level composition template
+**E — Raider Camp:** barricade, archers, and mixed tactical response.
 
-Each future level should be assembled from these beat types:
+**F — Coral Arch:** large landmark, recovery period, treasure alcove.
 
-**Travel beat** — low threat, establishes biome and rhythm.
+**G — Watch Post:** elevated enemy position and ranged pressure.
 
-**Formation beat** — 1–3 enemy groups with clear spacing.
+**H — Tidebreak Gate:** fortified final position and multiple formations.
 
-**Pressure beat** — ranged enemies, cavalry, hazards, or reinforcements.
+**I — Victory Shore:** threat clears, victory rhythm, reward presentation, return to camp.
 
-**Structure beat** — barricade, wall, tower, or other objective.
+## Level length
+The first stage should be approximately 8–12 minutes for a normal successful run. Later levels can become longer and more complex, but should be divided into distinct sections rather than simply increasing enemy count.
 
-**Recovery beat** — safe space for visual readability and reward pickup.
+## Greybox implementation
+Every level is authored from reusable gameplay markers:
+- Start
+- MarchPath
+- Encounter
+- Reinforcement
+- Objective
+- Treasure
+- Secret
+- Hazard
+- Landmark
+- Boss
+- Victory
 
-**Set-piece beat** — large landmark, special mechanic, miracle opportunity, or elite formation.
-
-**Boss beat** — arena with controlled composition and room for VFX.
-
-## Art-production rule
-
-Design gameplay geometry first with greybox rectangles and anchor markers. Final pixel art should conform to the geometry, not the reverse. This lets all eight biomes share proven gameplay pacing while still receiving unique silhouettes, props, lighting, and atmosphere.
+Art attaches to these markers later. The result should feel like a continuous authored adventure rather than disconnected combat arenas.

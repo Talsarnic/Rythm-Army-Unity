@@ -57,7 +57,8 @@ namespace RhythmArmy.Visuals
             CurrentState = UnitVisualState.Idle;
 
             Animator = PixelAnimator.CreateStandardUnitAnimator(
-                liveData.Member.Class.ToString().ToLowerInvariant(), 32);
+                liveData.Member.Class.ToString().ToLowerInvariant(),
+                PixelSpriteRegistry.GetSpec(liveData.Member.Class).SpriteWidth);
             RefreshEquipmentSprites();
         }
 

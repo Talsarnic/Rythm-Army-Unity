@@ -248,7 +248,9 @@ namespace RhythmArmy.Core.Rhythm
 
             if (j.Grade == Grade.Miss)
             {
-                // Missed tap doesn't register into slots
+                // The song clock never stops on a bad tap. A miss breaks the
+                // current phrase, but the next phrase still begins on the
+                // next musical measure exactly as it would in a live performance.
                 j.Measure = measure;
                 j.Slot = slot;
                 j.Ignored = false;
@@ -350,7 +352,7 @@ namespace RhythmArmy.Core.Rhythm
             {
                 Combo = 0;
                 FailCount++;
-                Reset();
+                _slots.Remove(measure);
                 return new RhythmEvent
                 {
                     Type = RhythmEventType.Fail,
@@ -369,7 +371,7 @@ namespace RhythmArmy.Core.Rhythm
             {
                 Combo = 0;
                 FailCount++;
-                Reset();
+                _slots.Remove(measure);
                 return new RhythmEvent
                 {
                     Type = RhythmEventType.Fail,

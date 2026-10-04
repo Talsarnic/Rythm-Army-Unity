@@ -162,6 +162,16 @@ namespace RhythmArmy.Gameplay.Battle
             state.IsAirborne = (command == CommandId.Jump);
             state.IsDefending = (command == CommandId.Defend);
 
+            // A jump lasts for the response/action window only. Every new
+            // command re-establishes normal ground formation unless it jumps again.
+            if (command != CommandId.Jump)
+            {
+                foreach (var unit in state.Units.Where(u => u.IsAlive))
+                {
+                    unit.Y = unit.FormationOffsetY;
+                }
+            }
+
             switch (command)
             {
                 case CommandId.March:
@@ -186,9 +196,6 @@ namespace RhythmArmy.Gameplay.Battle
                     // Miracle invocation does not move army, but readies elemental divine invocation
                     break;
             }
-
-            // Enemy AI Turn
-            EnemyAISystem.UpdateEnemyTurn(state, state.EnemyStates, rng);
 
             CheckBattleConditions(state);
         }

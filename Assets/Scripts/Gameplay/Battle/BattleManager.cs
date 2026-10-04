@@ -54,6 +54,7 @@ namespace RhythmArmy.Gameplay.Battle
         public event Action<LiveEnemy, List<LootRewardSummary>, int> OnEnemySlain;
         public event Action<HeroActionResult> OnHeroModeTriggered;
         public event Action<UnitAnimationCue> OnUnitAnimationCue;
+        public event Action<CombatFeedbackEvent> OnCombatFeedback;
 
         private Random _rng;
 
@@ -204,9 +205,11 @@ namespace RhythmArmy.Gameplay.Battle
                     CurrentMeasure = ev.Measure;
                     LastExecutedMeasure = ev.Measure;
                     ExecutePlayerCommand(ev);
+                    FlushCombatFeedback();
 
                     // Advance Enemy AI on measure
                     EnemyAISystem.UpdateEnemyTurn(State, EnemyAIStates, _rng);
+                    FlushCombatFeedback();
 
                     // Check for defeated enemies to roll loot
                     CheckDefeatedEnemies();
@@ -305,6 +308,24 @@ namespace RhythmArmy.Gameplay.Battle
             if (OnUnitAnimationCue != null)
             {
                 OnUnitAnimationCue.Invoke(cue);
+            }
+        }
+
+        private void FlushCombatFeedback()
+        {
+            if (State == null || State.PendingCombatFeedback == null ||
+                State.PendingCombatFeedback.Count == 0)
+                return;
+
+            var events = State.PendingCombatFeedback.ToArray();
+            State.PendingCombatFeedback.Clear();
+
+            foreach (var feedback in events)
+            {
+                if (OnCombatFeedback != null)
+                {
+                    OnCombatFeedback.Invoke(feedback);
+                }
             }
         }
 

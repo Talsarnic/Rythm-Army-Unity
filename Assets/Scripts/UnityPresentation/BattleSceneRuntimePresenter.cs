@@ -109,7 +109,7 @@ namespace RhythmArmy.UnityPresentation
         private void ConfigureCamera()
         {
             _camera.orthographic = true;
-            _camera.orthographicSize = 6.75f;
+            _camera.orthographicSize = 5.75f;
             _camera.transform.position = new Vector3(0f, 0f, -10f);
             _camera.backgroundColor = new Color(0.08f, 0.11f, 0.15f, 1f);
         }

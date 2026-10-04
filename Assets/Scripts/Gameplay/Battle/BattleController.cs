@@ -272,7 +272,7 @@ namespace RhythmArmy.Gameplay.Battle
                     ? EnemyViews.FirstOrDefault(v => v.LiveData.Id == feedback.Enemy.Id)
                     : null;
                 var unitView = feedback.Unit != null
-                    ? UnitViews.FirstOrDefault(v => v.LiveData.Id == feedback.Unit.Member.Id)
+                    ? UnitViews.FirstOrDefault(v => v.LiveData.Member.Id == feedback.Unit.Member.Id)
                     : null;
 
                 if (enemyView != null && enemyView.LiveData.IsAlive)

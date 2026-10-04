@@ -124,6 +124,13 @@ namespace RhythmArmy.Gameplay.Battle
                 {
                     Schedule(unit, command, CombatAnimationCue.FeverPulse, startTime + (_beatLength * 0.05f) + stagger, i);
                 }
+
+                if (unit.Member != null && unit.Member.IsHero && command != CommandId.March)
+                {
+                    Schedule(unit, command, CombatAnimationCue.HeroAbilityStart, startTime + (_beatLength * 0.10f) + stagger, i);
+                    Schedule(unit, command, CombatAnimationCue.HeroAbilityImpact, startTime + (_beatLength * 0.65f) + stagger, i);
+                    Schedule(unit, command, CombatAnimationCue.HeroAbilityRecovery, startTime + (_beatLength * 1.80f) + stagger, i);
+                }
             }
 
             _pending.Sort((a, b) => a.Cue.ScheduledTime.CompareTo(b.Cue.ScheduledTime));
@@ -172,7 +179,10 @@ namespace RhythmArmy.Gameplay.Battle
             int hash = index * 37;
             if (unit != null && unit.Member != null && !string.IsNullOrEmpty(unit.Member.Id))
             {
-                hash += unit.Member.Id.GetHashCode();
+                for (int i = 0; i < unit.Member.Id.Length; i++)
+                {
+                    hash = (hash * 31) + unit.Member.Id[i];
+                }
             }
 
             int bucket = Math.Abs(hash % 4);

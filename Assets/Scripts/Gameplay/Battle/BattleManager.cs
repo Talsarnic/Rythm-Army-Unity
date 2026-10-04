@@ -28,6 +28,7 @@ namespace RhythmArmy.Gameplay.Battle
         public RhythmEngine Rhythm { get; private set; }
         public RhythmAudioSequencer AudioSequencer { get; private set; }
         public PixelCamera Camera { get; private set; }
+        public RhythmCombatAnimationDirector AnimationDirector { get; private set; }
         public Dictionary<string, EnemyCombatState> EnemyAIStates { get; private set; }
         public MiracleSystem Miracles { get; private set; }
         public WeatherSimulationSystem Weather { get; private set; }
@@ -52,6 +53,7 @@ namespace RhythmArmy.Gameplay.Battle
         public event Action<BattlePhase> OnPhaseChanged;
         public event Action<LiveEnemy, List<LootRewardSummary>, int> OnEnemySlain;
         public event Action<HeroActionResult> OnHeroModeTriggered;
+        public event Action<UnitAnimationCue> OnUnitAnimationCue;
 
         private Random _rng;
 
@@ -60,6 +62,8 @@ namespace RhythmArmy.Gameplay.Battle
             _rng = rng ?? new Random();
             EnemyAIStates = new Dictionary<string, EnemyCombatState>();
             Camera = new PixelCamera();
+            AnimationDirector = new RhythmCombatAnimationDirector(RhythmConstants.DefaultBpm);
+            AnimationDirector.OnCue += HandleUnitAnimationCue;
             AudioSequencer = new RhythmAudioSequencer();
             Miracles = new MiracleSystem();
             Weather = new WeatherSimulationSystem();
@@ -75,6 +79,8 @@ namespace RhythmArmy.Gameplay.Battle
 
             Rhythm = new RhythmEngine(bpm, null);
             Rhythm.Start(0f);
+            AnimationDirector = new RhythmCombatAnimationDirector(bpm);
+            AnimationDirector.OnCue += HandleUnitAnimationCue;
             AudioSequencer.SetBPM(bpm);
             AudioSequencer.SetFeverActive(false);
 
@@ -169,6 +175,7 @@ namespace RhythmArmy.Gameplay.Battle
             }
 
             ElapsedTime += deltaTime;
+            AnimationDirector.Update(ElapsedTime);
             AudioSequencer.Update(deltaTime);
 
             // Update Rhythm Engine
@@ -250,6 +257,7 @@ namespace RhythmArmy.Gameplay.Battle
 
             // Execute combat action
             CombatRules.ExecuteCommand(State, rhythmEvent.Command.Id, Rhythm.IsFever, _rng);
+            AnimationDirector.ScheduleCommand(State, rhythmEvent.Command.Id, ElapsedTime, Rhythm.IsFever);
 
             // Handle Miracle Invocation
             if (rhythmEvent.Command.Id == CommandId.Miracle)
@@ -289,6 +297,14 @@ namespace RhythmArmy.Gameplay.Battle
             if (OnCommandEvaluated != null)
             {
                 OnCommandEvaluated.Invoke(rhythmEvent);
+            }
+        }
+
+        private void HandleUnitAnimationCue(UnitAnimationCue cue)
+        {
+            if (OnUnitAnimationCue != null)
+            {
+                OnUnitAnimationCue.Invoke(cue);
             }
         }
 

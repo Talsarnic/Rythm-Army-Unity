@@ -77,3 +77,18 @@ Use the same 2D side-view philosophy as battles, but with slower exploration mov
 
 ## Art-production strategy
 Build the town as modular districts. First production target: Town Square + Blacksmith District + Barracks District + connecting streets. This gives us a convincing large-town foundation and lets us validate shopping, equipment, recruitment, NPC interaction, and visual style before producing the rest.
+
+
+## Player Character — Hero Unit
+
+The character directly controlled while exploring Camp is the current **Army Hero Champion**.
+
+- Camp movement is controlled through the Hero, not a generic civilian avatar.
+- The Hero is resolved from the saved roster using `UnitMember.IsHero`.
+- If an older save has no designated Hero, the first non-Banner combat unit is promoted automatically.
+- The Hero's class, subspecies/evolution, weapon, shield, helmet, mask, relic, and other visual equipment remain the source of truth for the camp character's appearance.
+- Changing the Hero in Barracks changes which character the player controls the next time the camp avatar is refreshed.
+- The Hero remains visually distinct from recruited army members, who populate the town as NPCs, guards, trainees, workers, and ambient characters.
+- Camp exploration uses direct character movement and a following side-view camera; buildings and activities are discovered by physically walking through town.
+- The Hero can move between districts, approach NPCs, enter important buildings, inspect props, discover secrets, and reach the War Table to deploy the army.
+- The camp Hero is intentionally the same character identity used as the Hero Champion during battles, so equipment changes are visible in both gameplay contexts.

@@ -92,3 +92,10 @@ The character directly controlled while exploring Camp is the current **Army Her
 - Camp exploration uses direct character movement and a following side-view camera; buildings and activities are discovered by physically walking through town.
 - The Hero can move between districts, approach NPCs, enter important buildings, inspect props, discover secrets, and reach the War Table to deploy the army.
 - The camp Hero is intentionally the same character identity used as the Hero Champion during battles, so equipment changes are visible in both gameplay contexts.
+
+
+## Greybox Town Layout
+
+The first town pass uses nine connected districts rather than a station menu. The central square is the orientation anchor; west leads toward Barracks and Spirit Grove, north toward War Quarter, east toward Blacksmith and Merchant Market, south toward Feast Quarter, and the far east opens into Residential Quarter and the campaign road.
+
+Upper terraces and secondary streets create a layered settlement silhouette. The Hero can cross the town through multiple routes instead of following a single corridor, while landmarks provide recognizable navigation anchors. Final buildings, foliage, NPC homes, props, interiors and secrets will be placed against this established traversal skeleton.

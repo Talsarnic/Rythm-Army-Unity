@@ -287,7 +287,12 @@ namespace RhythmArmy.UnityPresentation
         {
             if (member == null) return null;
 
-            string key = member.Id + "|" + member.WeaponId + "|" + member.ShieldId + "|" +
+            // The first production Spearman sheet already contains its authored standard
+            // spear/backpack/hood silhouette; don't stack the procedural overlay on it.
+            if (member.Class == UnitClass.Spearman && member.IsHero == false && member.WeaponId == "spear-wood")
+                return null;
+
+            string key = member.Id + "|" + member.WeaponId + "|" +
                          member.HelmetId + "|" + member.MaskId + "|" + member.RelicId;
 
             Texture2D cached;

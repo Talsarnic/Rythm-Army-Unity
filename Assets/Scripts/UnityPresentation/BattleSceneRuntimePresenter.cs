@@ -358,12 +358,14 @@ namespace RhythmArmy.UnityPresentation
 
             actor.Object.transform.position = ToWorldPosition(actor.Unit.VisualX, actor.Unit.VisualY, 0f);
 
-            // Give infantry clear screen presence so their hand-authored pixel clusters
-            // read as intentional characters against the wide campaign backdrop. Heavy/large classes keep their
-            // production scale; the lift keeps every enlarged sprite grounded on the path.
-            float presentationScale = actor.SpriteSize <= 32 ? 1.35f : 1.10f;
+            // The authored Spearman atlas is rendered at 8 PPU so its pixels land cleanly on screen.
+            // Compensate the transform scale so it stays the same gameplay size as the other infantry.
+            bool authoredSpearman = actor.Unit.LiveData.Member.Class == UnitClass.Spearman
+                && actor.Unit.LiveData.Member.Subspecies == Subspecies.Normal;
+            float presentationScale = authoredSpearman ? 0.675f : (actor.SpriteSize <= 32 ? 1.35f : 1.10f);
+            float effectivePpu = authoredSpearman ? 8f : PixelsPerUnit;
             actor.Object.transform.localScale = Vector3.one * presentationScale;
-            actor.Object.transform.position += Vector3.up * ((presentationScale - 1f) * actor.SpriteSize / PixelsPerUnit * 0.5f);
+            actor.Object.transform.position += Vector3.up * ((presentationScale - 1f) * actor.SpriteSize / effectivePpu * 0.5f);
         }
 
         private void ApplyEnemySprite(RuntimeActor actor)

@@ -334,7 +334,14 @@ namespace RhythmArmy.UnityPresentation
             row = frame != null ? frame.Rect.Y / size : 0;
             index = frame != null ? frame.Rect.X / size : 0;
 
-            actor.Renderer.sprite = CreateSheetSprite(actor.Sheet, index * size, row * size, size, size, "UnitFrame");
+            actor.Renderer.sprite = CreateSheetSprite(
+                actor.Sheet,
+                index * size,
+                row * size,
+                size,
+                size,
+                "UnitFrame",
+                actor.UnitMember.Class == UnitClass.Spearman && actor.UnitMember.Subspecies == Subspecies.Normal ? 8f : PixelsPerUnit);
             actor.Renderer.flipX = !actor.Unit.FacingRight;
 
             if (actor.EquipmentRenderer != null && actor.EquipmentSheet != null)
@@ -373,15 +380,16 @@ namespace RhythmArmy.UnityPresentation
             actor.Object.transform.localScale = Vector3.one * actor.Enemy.SpriteScale;
         }
 
-        private Sprite CreateSheetSprite(Texture2D texture, int x, int y, int width, int height, string name)
+        private Sprite CreateSheetSprite(Texture2D texture, int x, int y, int width, int height, string name, float ppuOverride = 0f)
         {
             // PixelBitmapBuffer is top-left based; Unity texture coordinates are bottom-left.
             int flippedY = texture.height - y - height;
+            float ppu = ppuOverride > 0f ? ppuOverride : PixelsPerUnit;
             var sprite = Sprite.Create(
                 texture,
                 new Rect(x, flippedY, width, height),
                 new Vector2(0.5f, 0.0f),
-                PixelsPerUnit);
+                ppu);
             sprite.name = name;
             _ownedSprites.Add(sprite);
             return sprite;

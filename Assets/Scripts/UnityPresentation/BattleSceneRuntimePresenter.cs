@@ -341,7 +341,7 @@ namespace RhythmArmy.UnityPresentation
                 size,
                 size,
                 "UnitFrame",
-                actor.UnitMember.Class == UnitClass.Spearman && actor.UnitMember.Subspecies == Subspecies.Normal ? 8f : PixelsPerUnit);
+                actor.Unit.LiveData.Member.Class == UnitClass.Spearman && actor.Unit.LiveData.Member.Subspecies == Subspecies.Normal ? 8f : PixelsPerUnit);
             actor.Renderer.flipX = !actor.Unit.FacingRight;
 
             if (actor.EquipmentRenderer != null && actor.EquipmentSheet != null)

@@ -291,9 +291,10 @@ namespace RhythmArmy.UnityPresentation
         {
             if (member == null) return null;
 
-            // The first production Spearman sheet already contains its authored standard
-            // spear/backpack/hood silhouette; don't stack the procedural overlay on it.
-            if (member.Class == UnitClass.Spearman && member.WeaponId == "spear-wood")
+            // The authored Normal Spearman atlas already contains its complete base silhouette.
+            // Do not stack the older procedural equipment overlay on top of it; we'll add authored
+            // equipment variants after the base character is visually locked.
+            if (member.Class == UnitClass.Spearman && member.Subspecies == Subspecies.Normal)
                 return null;
 
             string key = member.Id + "|" + member.WeaponId + "|" +

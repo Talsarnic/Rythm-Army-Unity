@@ -272,6 +272,10 @@ namespace RhythmArmy.UnityPresentation
                 var production = Resources.Load<Texture2D>("Art/Units/Spearman/atlas_units_spearman");
                 if (production != null)
                 {
+                    // Authored pixel art must stay nearest-neighbour at runtime.
+                    production.filterMode = FilterMode.Point;
+                    production.wrapMode = TextureWrapMode.Clamp;
+                    production.mipMapBias = 0f;
                     _unitTextures[key] = production;
                     return production;
                 }

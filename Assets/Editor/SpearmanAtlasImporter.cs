@@ -5,7 +5,7 @@ namespace RhythmArmy.Editor
 {
     public class SpearmanAtlasImporter : AssetPostprocessor
     {
-        private const string AtlasPath = "Assets/Art/Units/Spearman/atlas_units_spearman.png";
+        private const string AtlasPath = "Assets/Resources/Art/Units/Spearman/atlas_units_spearman.png";
         private const int FrameSize = 32;
         private const int Columns = 4;
         private const int Rows = 10;

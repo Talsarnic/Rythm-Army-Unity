@@ -269,6 +269,18 @@ namespace RhythmArmy.UnityPresentation
             // as the fallback for other classes/species until their production sheets arrive.
             if (unitClass == UnitClass.Spearman && species == Subspecies.Normal)
             {
+                // Temporary authored-sprite test: use the isolated 32x32 AI-generated
+                // gameplay frame when present, while retaining the production atlas as fallback.
+                var gameplayTest = Resources.Load<Texture2D>("Art/Units/Spearman/Spearman_Gameplay_32x32");
+                if (gameplayTest != null)
+                {
+                    gameplayTest.filterMode = FilterMode.Point;
+                    gameplayTest.wrapMode = TextureWrapMode.Clamp;
+                    gameplayTest.mipMapBias = 0f;
+                    _unitTextures[key] = gameplayTest;
+                    return gameplayTest;
+                }
+
                 var production = Resources.Load<Texture2D>("Art/Units/Spearman/atlas_units_spearman");
                 if (production != null)
                 {

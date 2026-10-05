@@ -265,6 +265,18 @@ namespace RhythmArmy.UnityPresentation
             if (_unitTextures.TryGetValue(key, out var cached))
                 return cached;
 
+            // The production Spearman atlas is authored artwork. Keep procedural generation
+            // as the fallback for other classes/species until their production sheets arrive.
+            if (unitClass == UnitClass.Spearman && species == Subspecies.Normal)
+            {
+                var production = Resources.Load<Texture2D>("Art/Units/Spearman/atlas_units_spearman");
+                if (production != null)
+                {
+                    _unitTextures[key] = production;
+                    return production;
+                }
+            }
+
             var buffer = PixelAssetGenerator.GenerateUnitSpriteSheet(unitClass, species);
             var texture = CreateTexture(buffer, "Unit_" + unitClass + "_" + species);
             _unitTextures[key] = texture;
